@@ -25,13 +25,15 @@
           <div v-for="book in books" :key="book.name" 
                class="book-thumbnail flex flex-col items-center justify-between h-full bg-white rounded-lg shadow-lg p-4 transition duration-300 ease-in-out transform hover:scale-105 hover:shadow-xl cursor-pointer"
                @click="selectBook(book)">
-            <img :src="`${API_ENDPOINT}${book.thumbnail}`" :alt="`Cover of ${book.name}`" class="w-full h-64 object-cover rounded-lg mb-4"/>
-            <h3 class="text-center text-gray-800 font-semibold text-sm line-clamp-2">{{ book.name }}</h3>
+               <img v-if="book.thumbnail" :src="`${API_ENDPOINT}${book.thumbnail}`" :alt="`Cover of ${book.name}`" class="w-full h-64 object-cover rounded-lg mb-4"/>
+               <div v-else class="w-full h-64 bg-gray-200 rounded-lg mb-4 flex items-center justify-center">
+                  <span class="text-gray-500">No image available</span>
+               </div>            
+               <h3 class="text-center text-gray-800 font-semibold text-sm line-clamp-2">{{ book.name }}</h3>
           </div>
         </div>
       </div>
     </main>
-
     <footer class="bg-white shadow-md py-4 px-6">
       <div class="container mx-auto flex justify-center">
         <label for="file-upload" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded cursor-pointer transition duration-300 ease-in-out transform hover:scale-105">
