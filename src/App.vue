@@ -48,10 +48,10 @@
         @handleresize="handleResize"
       /> -->
 
-      <!-- <ReadingAreaNew
+      <ReadingAreaNew
         v-if="selectedBook"
         :book="selectedBook"
-      /> -->
+      />
 
     </main>
 
@@ -74,12 +74,12 @@ import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import { API_ENDPOINT } from '@/config';
 // import ReadingArea from './components/ReadingArea.vue';
-// import ReadingAreaNew from './components/ReadingAreaNew.vue';
+import ReadingAreaNew from './components/ReadingAreaNew.vue';
 
 export default {
   name: 'App',
   components: {
-    // ReadingAreaNew
+    ReadingAreaNew
   },
   setup() {
     const books = ref([]);
