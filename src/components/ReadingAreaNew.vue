@@ -1,25 +1,28 @@
 <template>
-    <div class="reading-area flex flex-col h-full">
-      <div v-if="loading" class="flex-grow flex items-center justify-center">
-        Loading...
-      </div>
-      <div v-else-if="error" class="flex-grow flex items-center justify-center text-red-500">
-        {{ error }}
-      </div>
-      <div v-else id="epub-viewer" class="flex-grow"></div>
-      
-      <footer class="bg-gray-100 p-4">
-        <div class="flex justify-between max-w-3xl mx-auto">
-          <button @click="prevPage" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
-            Previous
-          </button>
-          <button @click="nextPage" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
-            Next
-          </button>
-        </div>
-      </footer>
+  <div class="reading-area flex flex-col h-full">
+    <div v-if="loading" class="flex-grow flex items-center justify-center">
+      <div class="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
     </div>
-  </template>
+    <div v-else-if="error" class="flex-grow flex items-center justify-center text-red-500">
+      {{ error }}
+    </div>
+    <div v-else id="epub-viewer" class="flex-grow overflow-auto"></div>
+    
+    <footer class="bg-gray-100 shadow-md">
+      <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+        <button @click="prevPage" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out transform hover:scale-105">
+          &#8592; Previous
+        </button>
+        <!-- <div class="text-gray-600">
+          Page {{ currentPage }} of {{ totalPages }}
+        </div> -->
+        <button @click="nextPage" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out transform hover:scale-105">
+          Next &#8594;
+        </button>
+      </div>
+    </footer>
+  </div>
+</template>
   
   <script>
   import { ref, onMounted, onUnmounted, watch } from 'vue';
