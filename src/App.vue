@@ -36,18 +36,6 @@
         </div>
       </template>
 
-      <!-- <ReadingArea
-        v-else
-        :book="selectedBook"
-        :showBookSummary="showBookSummary"
-        :bookTitle="selectedBook.name"
-        :showChat="showChat"
-        :filename="selectedBook.filename"
-        @closeChat="handleCloseChat"
-        @closeSummary="handleCloseSummary"
-        @handleresize="handleResize"
-      /> -->
-
       <ReadingAreaNew
         v-if="selectedBook"
         :book="selectedBook"
@@ -58,12 +46,11 @@
     <footer class="bg-white shadow-md py-4 px-6">
       <div class="container mx-auto flex justify-center">
         <template v-if="!selectedBook">
-          <label for="file-upload" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded cursor-pointer transition duration-300 ease-in-out transform hover:scale-105">
-            Upload Book
-          </label>
-          <input id="file-upload" type="file" class="hidden" @change="onFileUpload" accept=".epub"/>
+          <input type="file" ref="fileInput" @change="onFileUpload" accept=".epub" class="hidden" :disabled="uploading" />
+          <button @click="openFileSelector" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded cursor-pointer transition duration-300 ease-in-out transform hover:scale-105" :class="{ 'opacity-50 cursor-not-allowed': uploading }">
+            {{ uploading ? 'Uploading...' : 'Upload Book' }}
+          </button>
         </template>
-
       </div>
     </footer>
   </div>
@@ -84,10 +71,12 @@ export default {
   setup() {
     const books = ref([]);
     const loading = ref(true);
+    const uploading = ref(false);
     const error = ref(null);
     const selectedBook = ref(null);
     const showBookSummary = ref(false);
     const showChat = ref(false);
+    const fileInput = ref(null);
 
     const fetchBooks = async () => {
       try {
@@ -123,11 +112,39 @@ export default {
       showChat.value = false;
     };
 
-    const onFileUpload = (event) => {
+
+    const openFileSelector = () => {
+      console.log("bhosdi wale")
+      if (fileInput.value) {
+        fileInput.value.click();
+      }
+    };
+
+    const onFileUpload = async (event) => {
       const file = event.target.files[0];
       if (file && file.name.endsWith('.epub')) {
         console.log('Uploading file:', file.name);
-        // Add your file upload logic here
+        
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+          uploading.value = true;
+          const response = await axios.post(`${API_ENDPOINT}/upload-epub`, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+          console.log('Upload response:', response.data);
+          alert('File uploaded successfully!');
+          // Refresh the book list after successful upload
+          await fetchBooks();
+        } catch (error) {
+          console.error('Error uploading file:', error);
+          alert('Error uploading file. Please try again.');
+        } finally {
+          uploading.value = false;
+        }
       } else {
         alert('Please select a valid EPUB file.');
       }
@@ -158,6 +175,7 @@ export default {
     return { 
       books, 
       loading, 
+      uploading,
       error, 
       selectedBook, 
       showBookSummary,
@@ -165,6 +183,8 @@ export default {
       API_ENDPOINT,
       selectBook, 
       gotoHomePage, 
+      fileInput,
+      openFileSelector,
       onFileUpload,
       toggleBookSummary,
       toggleChat,
