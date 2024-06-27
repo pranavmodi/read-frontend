@@ -12,7 +12,6 @@
     "autoprefixer": "^10",
     "axios": "^1.7.2",
     "core-js": "^3.8.3",
-    "epubjs": "^0.3.93",
     "express": "^4.19.2",
     "postcss": "^8",
     "serve-static": "^1.15.0",

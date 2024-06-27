@@ -1,16 +1,28 @@
 <template>
     <div class="reading-area flex flex-col h-full">
-      <div id="epub-viewer" class="flex-grow"></div>
-      <div class="controls flex justify-between p-4 bg-gray-100">
-        <button @click="prevPage" class="bg-blue-500 text-white px-4 py-2 rounded">Previous</button>
-        <button @click="nextPage" class="bg-blue-500 text-white px-4 py-2 rounded">Next</button>
+      <div v-if="loading" class="flex-grow flex items-center justify-center">
+        Loading...
       </div>
+      <div v-else-if="error" class="flex-grow flex items-center justify-center text-red-500">
+        {{ error }}
+      </div>
+      <div v-else id="epub-viewer" class="flex-grow"></div>
+      
+      <footer class="bg-gray-100 p-4">
+        <div class="flex justify-between max-w-3xl mx-auto">
+          <button @click="prevPage" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+            Previous
+          </button>
+          <button @click="nextPage" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+            Next
+          </button>
+        </div>
+      </footer>
     </div>
   </template>
   
   <script>
   import { ref, onMounted, onUnmounted, watch } from 'vue';
-  import ePub from 'epubjs';
   
   export default {
     name: 'ReadingAreaNew',
@@ -21,21 +33,40 @@
       }
     },
     setup(props) {
+      const book = ref(null);
       const rendition = ref(null);
-      const epub = ref(null);
+      const loading = ref(true);
+      const error = ref(null);
   
       const loadBook = async () => {
-        if (epub.value) {
-          epub.value.destroy();
+        if (book.value) {
+          book.value.destroy();
         }
   
-        epub.value = ePub(props.book.epub);
-        rendition.value = epub.value.renderTo('epub-viewer', {
-          width: '100%',
-          height: '100%'
-        });
+        loading.value = true;
+        error.value = null;
   
-        await rendition.value.display();
+        try {
+          // Use the global ePub object
+          book.value = new window.ePub(props.book.epub);
+          rendition.value = book.value.renderTo('epub-viewer', {
+            width: '100%',
+            height: '100%',
+            spread: 'always'
+          });
+  
+          rendition.value.display();
+  
+          // Setup key listeners
+          rendition.value.on('keyup', handleKeyPress);
+          document.addEventListener('keyup', handleKeyPress);
+  
+          loading.value = false;
+        } catch (err) {
+          console.error('Error loading book:', err);
+          error.value = 'Failed to load the book. Please try again.';
+          loading.value = false;
+        }
       };
   
       const prevPage = () => {
@@ -50,23 +81,35 @@
         }
       };
   
+      const handleKeyPress = (event) => {
+        switch(event.key) {
+          case 'ArrowLeft':
+            prevPage();
+            break;
+          case 'ArrowRight':
+            nextPage();
+            break;
+        }
+      };
+  
       onMounted(() => {
         loadBook();
       });
   
       onUnmounted(() => {
-        if (epub.value) {
-          epub.value.destroy();
+        if (book.value) {
+          book.value.destroy();
         }
+        document.removeEventListener('keyup', handleKeyPress);
       });
   
-      watch(() => props.book, () => {
-        loadBook();
-      });
+      watch(() => props.book, loadBook);
   
       return {
         prevPage,
-        nextPage
+        nextPage,
+        loading,
+        error
       };
     }
   }
@@ -75,10 +118,16 @@
   <style scoped>
   .reading-area {
     height: calc(100vh - 4rem); /* Adjust this value based on your header/footer height */
+    display: flex;
+    flex-direction: column;
   }
   
   #epub-viewer {
-    width: 100%;
-    height: 100%;
+    flex-grow: 1;
+    overflow: auto;
+  }
+  
+  footer {
+    flex-shrink: 0;
   }
   </style>
