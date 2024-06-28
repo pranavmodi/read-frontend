@@ -10,6 +10,15 @@
 
     <main class="container mx-auto px-4 py-8 flex-grow">
       <template v-if="!selectedBook">
+        <div v-if="isBookLoading" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div class="bg-white p-8 rounded-lg shadow-xl text-center">
+            <h3 class="text-xl font-bold mb-4">Loading Book</h3>
+            <div class="w-64 h-4 bg-gray-200 rounded-full overflow-hidden">
+              <div class="h-full bg-blue-500 transition-all duration-300 ease-out" :style="{ width: `${bookLoadingProgress}%` }"></div>
+            </div>
+            <p class="mt-2">{{ bookLoadingProgress }}%</p>
+          </div>
+        </div>
         <h2 class="text-4xl font-bold mb-8 text-gray-800 text-center">Book Library</h2>
         <div v-if="loading" class="text-xl text-gray-600 text-center">
           <svg class="animate-spin h-8 w-8 mx-auto mb-4 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -46,6 +55,7 @@
     <footer class="bg-white shadow-md py-4 px-6">
       <div class="container mx-auto flex justify-center">
         <template v-if="!selectedBook">
+
           <input type="file" ref="fileInput" @change="onFileUpload" accept=".epub" class="hidden" :disabled="uploading" />
           <button @click="openFileSelector" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded cursor-pointer transition duration-300 ease-in-out transform hover:scale-105" :class="{ 'opacity-50 cursor-not-allowed': uploading }">
             {{ uploading ? 'Uploading...' : 'Upload Book' }}
@@ -77,6 +87,8 @@ export default {
     const showBookSummary = ref(false);
     const showChat = ref(false);
     const fileInput = ref(null);
+    const isBookLoading = ref(false);
+    const bookLoadingProgress = ref(0);
 
     const fetchBooks = async () => {
       try {
@@ -93,16 +105,27 @@ export default {
 
     const selectBook = async (book) => {
       console.log('Selected book:', book);
+      isBookLoading.value = true;
+      bookLoadingProgress.value = 0;
+
       try {
+        console.log("Starting to load...");
         const response = await axios.get(`${API_ENDPOINT}${book.epub}`, {
-          responseType: 'arraybuffer'
+          responseType: 'arraybuffer',
+          onDownloadProgress: (progressEvent) => {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            bookLoadingProgress.value = percentCompleted;
+          }
         });
         selectedBook.value = {
           ...book,
           epub: response.data
         };
+        console.log("Finished loading");
       } catch (error) {
         console.error('Error loading EPUB:', error);
+      } finally {
+        isBookLoading.value = false;
       }
     };
 
@@ -178,6 +201,8 @@ export default {
       uploading,
       error, 
       selectedBook, 
+      isBookLoading,
+      bookLoadingProgress,
       showBookSummary,
       showChat,
       API_ENDPOINT,

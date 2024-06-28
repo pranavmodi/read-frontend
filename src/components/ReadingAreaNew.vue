@@ -48,6 +48,7 @@ export default {
     };
 
     const loadBook = async () => {
+      console.log('in loadbook');
       if (book.value) {
         book.value.destroy();
       }
