@@ -13,6 +13,12 @@
         <button @click="prevPage" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out transform hover:scale-105">
           &#8592; Previous
         </button>
+      <button @click="decreaseFontSize" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+        A-
+      </button>
+      <button @click="increaseFontSize" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+        A+
+      </button>
         <button @click="nextPage" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out transform hover:scale-105">
           Next &#8594;
         </button>
@@ -38,6 +44,24 @@ export default {
     const loading = ref(true);
     const error = ref(null);
     const epubViewerRef = ref(null);
+    const fontSize = ref(16); // Default font size in pixels
+
+    const increaseFontSize = () => {
+      fontSize.value = Math.min(fontSize.value + 2, 32);
+      updateFontSize();
+    };
+
+    const decreaseFontSize = () => {
+      fontSize.value = Math.max(fontSize.value - 2, 12);
+      updateFontSize();
+    };
+
+    const updateFontSize = () => {
+      if (rendition.value) {
+        rendition.value.themes.fontSize(`${fontSize.value}px`);
+      }
+    };
+    
 
     const adjustViewerHeight = () => {
       if (epubViewerRef.value) {
@@ -69,6 +93,8 @@ export default {
 
         // Setup key listeners
         rendition.value.on('keyup', handleKeyPress);
+        rendition.value.themes.fontSize(`${fontSize.value}px`);
+
         document.addEventListener('keyup', handleKeyPress);
 
         loading.value = false;
@@ -122,13 +148,17 @@ export default {
       nextPage,
       loading,
       error,
-      epubViewerRef
+      epubViewerRef,
+      fontSize,
+      increaseFontSize,
+      decreaseFontSize,
     };
   }
 }
 </script>
 
 <style scoped>
+
 .reading-area {
   height: 80vh;
   display: flex;
@@ -143,4 +173,5 @@ export default {
 footer {
   flex-shrink: 0;
 }
+
 </style>
