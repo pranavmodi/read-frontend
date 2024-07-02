@@ -28,7 +28,7 @@
       </div>
     </footer>
 
-  <div v-if="showSummaryOverlay" class="absolute inset-y-0 right-0 w-1/3 bg-white shadow-lg p-4 overflow-y-auto">
+  <div v-if="showSummaryOverlay" class="absolute inset-y-0 right-0 w-1/2 bg-white shadow-lg p-4 overflow-y-auto">
       <div class="flex justify-between mb-4">
         <div class="flex space-x-2">
           <button @click="switchSummaryTab('book')" :class="['px-3 py-1 rounded', summaryTab === 'book' ? 'bg-blue-500 text-white' : 'bg-gray-200']">
@@ -38,8 +38,8 @@
             Chapter Summaries
           </button>
         </div>
-        <button @click="toggleSummaryOverlay" class="text-gray-500 hover:text-gray-700">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        <button @click="toggleSummaryOverlay" class="fixed bottom-4 right-4 bg-blue-500 text-white p-2 rounded-full shadow-lg">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
         </button>
       </div>
       <div v-if="summaryTab === 'book'">
@@ -61,6 +61,8 @@
 
 <script>
 import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { API_ENDPOINT } from '@/config';
+
 
 export default {
   name: 'ReadingAreaNew',
@@ -84,6 +86,32 @@ export default {
     const currentChapter = ref(1);
     const difficultyLevel = ref(5); // Scale of 1-10
     const adaptiveModeEnabled = ref(false);
+
+
+    const processEpub = async () => {
+      console.log("going to call process epub");
+      try {
+        const response = await fetch(`${API_ENDPOINT}/process-epub`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            filename: props.book.filename // Assuming the book object has a filename property
+          }),
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to process ePub motherfucker');
+        }
+        
+        // Handle the successful response here
+        console.log('ePub processing started');
+      } catch (error) {
+        console.error('Error processing ePub:', error);
+        // Handle the error (e.g., show an error message to the user)
+      }
+    };
  
 
     const toggleAdaptiveMode = () => {
@@ -109,7 +137,9 @@ export default {
 
     const simulateTextSimplification = (text) => {
       // This is a placeholder function. In a real implementation, you'd use an AI service to simplify the text.
-      return text.replace(/\b\w{10,}\b/g, 'simplified_word');
+      // return text.replace(/\b\w{10,}\b/g, 'simplified_word');
+      const t = text[0];
+      return t;
     };
 
     const resetTextDifficulty = async () => {
@@ -126,8 +156,11 @@ export default {
     };
 
     const toggleSummaryOverlay = async () => {
-          adaptiveModeEnabled.value = !adaptiveModeEnabled.value;
-          showSummaryOverlay.value = !showSummaryOverlay.value;
+      adaptiveModeEnabled.value = !adaptiveModeEnabled.value;
+      showSummaryOverlay.value = !showSummaryOverlay.value;
+      if (showSummaryOverlay.value) {
+        await processEpub();
+      }
       if (adaptiveModeEnabled.value) {
         await applyAdaptiveDifficulty();
       } else {
@@ -281,7 +314,8 @@ export default {
       toggleSummaryOverlay,
       switchSummaryTab,
       getChapterSummary,
-      getBookSummary
+      getBookSummary,
+      processEpub
     };
   }
 }
