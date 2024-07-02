@@ -1,5 +1,6 @@
 <template>
-  <div class="reading-area flex flex-col h-screen">
+  <div class="reading-area flex flex-col h-screen relative">
+    <!-- Original book view -->
     <div v-if="loading" class="flex-grow flex items-center justify-center">
       <div class="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
     </div>
@@ -28,28 +29,25 @@
       </div>
     </footer>
 
-  <div v-if="showSummaryOverlay" class="absolute inset-y-0 right-0 w-1/2 bg-white shadow-lg p-4 overflow-y-auto">
-      <div class="flex justify-between mb-4">
-        <div class="flex space-x-2">
-          <button @click="switchSummaryTab('book')" :class="['px-3 py-1 rounded', summaryTab === 'book' ? 'bg-blue-500 text-white' : 'bg-gray-200']">
-            Book Summary
+    <!-- Summary overlay -->
+    <div v-if="showSummaryOverlay" class="absolute inset-0 bg-white z-10 flex flex-col">
+      <div class="flex-grow overflow-y-auto p-4">
+        <h2 class="text-2xl font-bold mb-4">Summarized Book</h2>
+        <div v-html="currentSummaryContent"></div>
+      </div>
+      <footer class="bg-gray-100 shadow-md">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+          <button @click="prevSummaryPage" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out transform hover:scale-105">
+            &#8592; Previous
           </button>
-          <button @click="switchSummaryTab('chapter')" :class="['px-3 py-1 rounded', summaryTab === 'chapter' ? 'bg-blue-500 text-white' : 'bg-gray-200']">
-            Chapter Summaries
+          <button @click="toggleSummaryOverlay" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">
+            Close Summary
+          </button>
+          <button @click="nextSummaryPage" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out transform hover:scale-105">
+            Next &#8594;
           </button>
         </div>
-        <button @click="toggleSummaryOverlay" class="fixed bottom-4 right-4 bg-blue-500 text-white p-2 rounded-full shadow-lg">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-        </button>
-      </div>
-      <div v-if="summaryTab === 'book'">
-        <h2 class="text-xl font-bold mb-2">Book Summary</h2>
-        <p>{{ bookSummary }}</p>
-      </div>
-      <div v-else>
-        <h2 class="text-xl font-bold mb-2">Chapter {{ currentChapter }} Summary</h2>
-        <p>{{ chapterSummaries[currentChapter] }}</p>
-      </div>
+      </footer>
     </div>
 
     <!-- Toggle button for summary overlay -->
@@ -86,6 +84,9 @@ export default {
     const currentChapter = ref(1);
     const difficultyLevel = ref(5); // Scale of 1-10
     const adaptiveModeEnabled = ref(false);
+    const summarizedContent = ref([]);
+    const currentSummaryPage = ref(0);
+    const currentSummaryContent = ref('');
 
 
     const processEpub = async () => {
@@ -155,17 +156,24 @@ export default {
       }
     };
 
+    // const toggleSummaryOverlay = async () => {
+    //   adaptiveModeEnabled.value = !adaptiveModeEnabled.value;
+    //   showSummaryOverlay.value = !showSummaryOverlay.value;
+    //   if (showSummaryOverlay.value) {
+    //     await processEpub();
+    //   }
+    //   if (adaptiveModeEnabled.value) {
+    //     await applyAdaptiveDifficulty();
+    //   } else {
+    //     await resetTextDifficulty();
+    //   }    
+    // };
+
     const toggleSummaryOverlay = async () => {
-      adaptiveModeEnabled.value = !adaptiveModeEnabled.value;
-      showSummaryOverlay.value = !showSummaryOverlay.value;
-      if (showSummaryOverlay.value) {
+      if (!showSummaryOverlay.value) {
         await processEpub();
       }
-      if (adaptiveModeEnabled.value) {
-        await applyAdaptiveDifficulty();
-      } else {
-        await resetTextDifficulty();
-      }    
+      showSummaryOverlay.value = !showSummaryOverlay.value;
     };
 
     const switchSummaryTab = (tab) => {
@@ -279,6 +287,21 @@ export default {
       }
     };
 
+
+    const nextSummaryPage = () => {
+      if (currentSummaryPage.value < summarizedContent.value.length - 1) {
+        currentSummaryPage.value++;
+        currentSummaryContent.value = summarizedContent.value[currentSummaryPage.value];
+      }
+    };
+
+    const prevSummaryPage = () => {
+      if (currentSummaryPage.value > 0) {
+        currentSummaryPage.value--;
+        currentSummaryContent.value = summarizedContent.value[currentSummaryPage.value];
+      }
+    };
+
     onMounted(() => {
       loadBook();
       window.addEventListener('resize', adjustViewerHeight);
@@ -315,7 +338,11 @@ export default {
       switchSummaryTab,
       getChapterSummary,
       getBookSummary,
-      processEpub
+      processEpub,
+      nextSummaryPage,
+      prevSummaryPage,
+      currentSummaryContent
+
     };
   }
 }
