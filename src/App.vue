@@ -104,7 +104,6 @@ export default {
     };
 
     const selectBook = async (book) => {
-      console.log('the Selected book:', book);
       isBookLoading.value = true;
       bookLoadingProgress.value = 0;
 

@@ -108,6 +108,7 @@ export default {
     const summaryType = ref('book');
     const currentChapterURI = ref('');
     const bookTitle = ref(props.book.name || 'Unknown Book');
+    const db_bookTitle = ref(null);
 
     const connectSocket = () => {
       socket.value = io(API_ENDPOINT);
@@ -361,6 +362,13 @@ export default {
 
       try {
         book.value = new window.ePub(props.book.epub);
+        book.value.loaded.metadata.then(metadata => {
+        // Get the book title
+        db_bookTitle.value = metadata.title;
+        console.log('db Book Title:', db_bookTitle);
+      }).catch(error => {
+        console.error('Error loading EPUB:', error);
+      });
         // adjustViewerHeight();
         rendition.value = book.value.renderTo('epub-viewer', {
           width: '100%',
@@ -415,7 +423,8 @@ export default {
     };
 
     const getBookSummary = async () => {
-      const encodedBookTitle = encodeURIComponent(bookTitle.value);
+      // const encodedBookTitle = encodeURIComponent(bookTitle.value);
+      const encodedBookTitle = encodeURIComponent(db_bookTitle.value);
 
       try {
         const response = await fetch(`${API_ENDPOINT}/book-summary/${encodedBookTitle}`);
