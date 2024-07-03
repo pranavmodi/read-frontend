@@ -148,7 +148,7 @@ export default {
 
       socket.value.on('processing_complete', (data) => {
         console.log('Processing complete event received:', data);
-        if (data.book_title === bookTitle.value) {
+        if (data.book_name === props.book.name) {
           console.log('Processing complete for current book');
           isProcessing.value = false;
           getBookSummary();
@@ -226,59 +226,66 @@ export default {
       }
     };
 
-    const generateChapterIdentifier = (chapterName) => {
-      if (!chapterName) {
-        return `${bookTitle.value}_Chapter_${currentChapterURI.value}`;
-      } else {
-        return `${bookTitle.value}_Chapter_${chapterName}`;
+    const generateChapterIdentifier = (chapterHref) => {
+      try {
+        const bookName = props.book.name || 'UnknownBook';
+        // const chapterUri = chapterHref.split('/').pop(); // Get the filename from the href
+        const chapterIdentifier = `${bookName}_Chapter_${chapterHref}`;
+        
+        // Encode the entire chapter identifier
+        // console.log(' Chapter Identifier:', chapterIdentifier);
+        const encodedChapterIdentifier = encodeURIComponent(chapterIdentifier);
+        return encodedChapterIdentifier;
+      } catch (error) {
+        console.error('Error generating chapter identifier:', error);
+        return '';
       }
     };
-
 
     const getChapterSummaries = async () => {
       if (!book.value) {
         console.error("Book not loaded");
         return;
       }
-      // console.log("the props.book ", props.book);
+
       const chapters = book.value.spine.spineItems;
-      const summaryPromises = chapters.map(async chapter => {
+      const summaryPromises = chapters.map(async (chapter, index) => {
       const chapterId = generateChapterIdentifier(chapter.href);
-        
-        try {
-          const response = await fetch(`${API_ENDPOINT}/chapter-summary/${encodeURIComponent(chapterId)}`);
-          if (!response.ok) {
-            throw new Error('Network response was not ok');
-          }
-          const data = await response.json();
-          
-          if (data.status === 'success') {
-            return {
-              title: data.chapter_summary.title,
-              content: data.chapter_summary.summary
-            };
-          } else {
-            return {
-              title: "Chapter Summary for " + chapter.href,
-              content: "Summary is pending for this chapter."
-            };
-          }
-        } catch (error) {
-          console.error("Error fetching summary for chapter:", chapter.href, error);
-          return {
-            title: "Chapter Summary for " + chapter.href,
-            content: "An error occurred while fetching the chapter summary."
-          };
-        }
-      });
 
       try {
-        const summaries = await Promise.all(summaryPromises);
-        chapterSummaries.value = summaries;
+        const response = await fetch(`${API_ENDPOINT}/chapter-summary/${chapterId}`);
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          return {
+            title: `Chapter ${index + 1}`,
+            content: data.chapter_summary.summary
+          };
+        } else {
+          return {
+            title: `Chapter ${index + 1}`,
+            content: "Summary is pending for this chapter."
+          };
+        }
       } catch (error) {
-        console.error("Error fetching chapter summaries:", error);
+        console.error("Error fetching summary for chapter:", chapter.href, error);
+        return {
+          title: `Chapter ${index + 1}`,
+          content: "An error occurred while fetching the chapter summary."
+        };
       }
-    };
+    });
+
+    try {
+      const summaries = await Promise.all(summaryPromises);
+      chapterSummaries.value = summaries;
+    } catch (error) {
+      console.error("Error fetching chapter summaries:", error);
+    }
+  };
 
     const simulateTextSimplification = (text) => {
       // This is a placeholder function. In a real implementation, you'd use an AI service to simplify the text.
@@ -288,7 +295,7 @@ export default {
     };
 
     const resetTextDifficulty = async () => {
-          if (rendition.value) {
+      if (rendition.value) {
         const currentLocation = rendition.value.currentLocation();
         if (currentLocation) {
           const cfi = currentLocation.start.cfi;
@@ -323,32 +330,6 @@ export default {
         showSummaryOverlay.value = false;
       }
     };
-
-
-
-    const getChapterSummary = async (chapterNumber) => {
-      if (!chapterSummaries.value[chapterNumber]) {
-        // Here you would call your AI service to generate the summary
-        // For now, we'll use a placeholder
-        chapterSummaries.value[chapterNumber] = `AI-generated summary for chapter ${chapterNumber}`;
-      }
-      return chapterSummaries.value[chapterNumber];
-    };
-
-
-    // const fetchSummary = async () => {
-    //   try {
-    //     const response = await fetch(`${API_ENDPOINT}/get-summary/${props.book.title}`);
-    //     if (!response.ok) {
-    //       throw new Error('Failed to fetch summary');
-    //     }
-    //     const result = await response.json();
-    //     summarizedContent.value = result.summary;
-    //     currentSummaryContent.value = summarizedContent.value[0] || '';
-    //   } catch (error) {
-    //     console.error('Error fetching summary:', error);
-    //   }
-    // };
 
     const increaseFontSize = () => {
       fontSize.value = Math.min(fontSize.value + 2, 32);
@@ -447,9 +428,8 @@ export default {
 
       try {
         // Wait for the metadata to load
-        const metadata = await book.value.loaded.metadata;
-        const encodedBookTitle = encodeURIComponent(metadata.title);
-        console.log('Encoded Book Title:', encodedBookTitle);
+        // const metadata = await book.value.loaded.metadata;
+        const encodedBookTitle = encodeURIComponent(props.book.name);
 
         // Fetch the book summary
         const response = await fetch(`${API_ENDPOINT}/book-summary/${encodedBookTitle}`);
@@ -536,7 +516,6 @@ export default {
       adaptiveModeEnabled,
       toggleAdaptiveMode,
       toggleSummaryOverlay,
-      getChapterSummary,
       getBookSummary,
       processEpub,
       nextSummaryPage,
