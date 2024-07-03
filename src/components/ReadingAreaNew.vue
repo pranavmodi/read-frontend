@@ -31,20 +31,34 @@
 
     <!-- Summary overlay -->
     <div v-if="showSummaryOverlay" class="absolute inset-0 bg-white z-10 flex flex-col">
-      <div class="flex-grow overflow-y-auto p-4">
-        <h2 class="text-2xl font-bold mb-4">Summarized Book</h2>
-        <div v-html="currentSummaryContent"></div>
+      <div v-if="isProcessing" class="flex-grow flex flex-col items-center justify-center">
+        <div class="w-64 bg-gray-200 rounded-full h-6 dark:bg-gray-700 mb-4">
+          <div class="bg-blue-600 h-6 rounded-full" :style="{ width: `${progress}%` }"></div>
+        </div>
+        <p>Processing: {{ progress }}%</p>
+      </div>
+      <div v-else class="flex-grow overflow-y-auto p-4">
+        <div class="mb-4">
+          <select v-model="summaryType" class="block w-full px-4 py-2 rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+            <option value="book">Entire Book Summary</option>
+            <option value="chapters">Chapter Summaries</option>
+          </select>
+        </div>
+        <h2 class="text-2xl font-bold mb-4">{{ summaryType === 'book' ? 'Book Summary' : 'Chapter Summaries' }}</h2>
+        <div v-if="summaryType === 'book'">
+          <p>{{ bookSummary }}</p>
+        </div>
+        <div v-else>
+          <div v-for="(chapter, index) in chapterSummaries" :key="index" class="mb-4">
+            <h3 class="text-xl font-semibold">{{ chapter.title }}</h3>
+            <p>{{ chapter.content }}</p>
+          </div>
+        </div>
       </div>
       <footer class="bg-gray-100 shadow-md">
         <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
-          <button @click="prevSummaryPage" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out transform hover:scale-105">
-            &#8592; Previous
-          </button>
-          <button @click="toggleSummaryOverlay" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">
+          <button @click="toggleSummaryOverlay" :disabled="isProcessing" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded disabled:opacity-50">
             Close Summary
-          </button>
-          <button @click="nextSummaryPage" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out transform hover:scale-105">
-            Next &#8594;
           </button>
         </div>
       </footer>
@@ -60,6 +74,7 @@
 <script>
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { API_ENDPOINT } from '@/config';
+import io from 'socket.io-client';
 
 
 export default {
@@ -87,31 +102,81 @@ export default {
     const summarizedContent = ref([]);
     const currentSummaryPage = ref(0);
     const currentSummaryContent = ref('');
+    const isProcessing = ref(false);
+    const progress = ref(0);
+    const socket = ref(null);
+    const summaryType = ref('book');
+    const currentChapterURI = ref('');
+    const bookTitle = ref(props.book.name || 'Unknown Book');
+
+    const connectSocket = () => {
+      socket.value = io(API_ENDPOINT);
+      
+      socket.value.on('connect', () => {
+        console.log('Socket connected');
+        console.log('the book title', bookTitle.value)
+      });
+      
+      socket.value.on('progress_update', (data) => {
+        progress.value = data.progress;
+      });
+
+      socket.value.on('processing_complete', (data) => {
+        console.log('Processing complete event received:', data);
+        if (data.book_title === bookTitle.value) {
+          console.log('Processing complete for current book');
+          isProcessing.value = false;
+          getBookSummary();
+          getChapterSummaries();
+        }
+      });
+
+      socket.value.on('disconnect', () => {
+        console.log('Socket disconnected');
+      });
+    };
+
+    const disconnectSocket = () => {
+      console.log("in disconnect now");
+      if (socket.value) {
+        socket.value.disconnect();
+      }
+    };
 
 
     const processEpub = async () => {
-      console.log("going to call process epub");
       try {
+        isProcessing.value = true;
+        progress.value = 0;
+        
         const response = await fetch(`${API_ENDPOINT}/process-epub`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            filename: props.book.filename // Assuming the book object has a filename property
+            filename: props.book.filename,
+            name: props.book.name
           }),
         });
         
         if (!response.ok) {
-          throw new Error('Failed to process ePub motherfucker');
+          throw new Error('Failed to process ePub');
         }
         
-        // Handle the successful response here
-        console.log('ePub processing started');
+        // The socket will handle progress updates and trigger getBookSummary and getChapterSummaries when done
       } catch (error) {
         console.error('Error processing ePub:', error);
-        // Handle the error (e.g., show an error message to the user)
+        isProcessing.value = false;
       }
+    };
+
+    const generatePlaceholderSummaries = () => {
+      bookSummary.value = "This is a placeholder for the entire book summary. It provides an overview of the main themes, characters, and plot points discussed throughout the book.";
+      
+      chapterSummaries.value = Array(10).fill().map((_, index) => 
+        `This is a placeholder summary for Chapter ${index + 1}. It briefly describes the key events, character developments, and important points covered in this chapter.`
+      );
     };
  
 
@@ -133,6 +198,60 @@ export default {
             content.content.innerHTML = simplifiedText;
           }
         });
+      }
+    };
+
+    const generateChapterIdentifier = (chapterName) => {
+      if (!chapterName) {
+        return `${bookTitle.value}_Chapter_${currentChapterURI.value}`;
+      } else {
+        return `${bookTitle.value}_Chapter_${chapterName}`;
+      }
+    };
+
+
+    const getChapterSummaries = async () => {
+      if (!book.value) {
+        console.error("Book not loaded");
+        return;
+      }
+      // console.log("the props.book ", props.book);
+      const chapters = book.value.spine.spineItems;
+      const summaryPromises = chapters.map(async chapter => {
+      const chapterId = generateChapterIdentifier(chapter.href);
+        
+        try {
+          const response = await fetch(`${API_ENDPOINT}/chapter-summary/${encodeURIComponent(chapterId)}`);
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          const data = await response.json();
+          
+          if (data.status === 'success') {
+            return {
+              title: data.chapter_summary.title,
+              content: data.chapter_summary.summary
+            };
+          } else {
+            return {
+              title: "Chapter Summary for " + chapter.href,
+              content: "Summary is pending for this chapter."
+            };
+          }
+        } catch (error) {
+          console.error("Error fetching summary for chapter:", chapter.href, error);
+          return {
+            title: "Chapter Summary for " + chapter.href,
+            content: "An error occurred while fetching the chapter summary."
+          };
+        }
+      });
+
+      try {
+        const summaries = await Promise.all(summaryPromises);
+        chapterSummaries.value = summaries;
+      } catch (error) {
+        console.error("Error fetching chapter summaries:", error);
       }
     };
 
@@ -171,14 +290,16 @@ export default {
 
     const toggleSummaryOverlay = async () => {
       if (!showSummaryOverlay.value) {
+        showSummaryOverlay.value = true;
+        connectSocket();
         await processEpub();
+      } else {
+        disconnectSocket();
+        showSummaryOverlay.value = false;
       }
-      showSummaryOverlay.value = !showSummaryOverlay.value;
     };
 
-    const switchSummaryTab = (tab) => {
-      summaryTab.value = tab;
-    };
+
 
     const getChapterSummary = async (chapterNumber) => {
       if (!chapterSummaries.value[chapterNumber]) {
@@ -189,14 +310,20 @@ export default {
       return chapterSummaries.value[chapterNumber];
     };
 
-    const getBookSummary = async () => {
-      if (!bookSummary.value) {
-        // Here you would call your AI service to generate the book summary
-        // For now, we'll use a placeholder
-        bookSummary.value = "AI-generated summary for the entire book";
-      }
-      return bookSummary.value;
-    };
+
+    // const fetchSummary = async () => {
+    //   try {
+    //     const response = await fetch(`${API_ENDPOINT}/get-summary/${props.book.title}`);
+    //     if (!response.ok) {
+    //       throw new Error('Failed to fetch summary');
+    //     }
+    //     const result = await response.json();
+    //     summarizedContent.value = result.summary;
+    //     currentSummaryContent.value = summarizedContent.value[0] || '';
+    //   } catch (error) {
+    //     console.error('Error fetching summary:', error);
+    //   }
+    // };
 
     const increaseFontSize = () => {
       fontSize.value = Math.min(fontSize.value + 2, 32);
@@ -224,7 +351,7 @@ export default {
     };
 
     const loadBook = async () => {
-      console.log('in loadbook');
+      console.log('in loadbook', props.book.name);
       if (book.value) {
         book.value.destroy();
       }
@@ -287,6 +414,24 @@ export default {
       }
     };
 
+    const getBookSummary = async () => {
+      const encodedBookTitle = encodeURIComponent(bookTitle.value);
+
+      try {
+        const response = await fetch(`${API_ENDPOINT}/book-summary/${encodedBookTitle}`);
+        
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        
+        const data = await response.json();
+        bookSummary.value = data.book_summary;
+      } catch (error) {
+        console.error("Error fetching book summary:", error);
+        bookSummary.value = "Failed to load book summary.";
+      }
+    };
+
 
     const nextSummaryPage = () => {
       if (currentSummaryPage.value < summarizedContent.value.length - 1) {
@@ -313,9 +458,31 @@ export default {
       }
       document.removeEventListener('keyup', handleKeyPress);
       window.removeEventListener('resize', adjustViewerHeight);
+      disconnectSocket();
     });
 
     watch(() => props.book, loadBook);
+
+        // Watch for changes in the current chapter
+    watch(() => props.book.currentChapter, (newChapter) => {
+      if (newChapter) {
+        currentChapterURI.value = newChapter.href;
+      }
+    });
+
+    watch(isProcessing, (newValue) => {
+      if (!newValue) {
+        // Processing is complete, update the UI
+        getBookSummary();
+        getChapterSummaries();
+      }
+    });
+
+    watch(() => props.book.title, (newTitle) => {
+      if (newTitle) {
+        bookTitle.value = newTitle;
+      }
+    });
 
     return {
       prevPage,
@@ -335,14 +502,16 @@ export default {
       adaptiveModeEnabled,
       toggleAdaptiveMode,
       toggleSummaryOverlay,
-      switchSummaryTab,
       getChapterSummary,
       getBookSummary,
       processEpub,
       nextSummaryPage,
       prevSummaryPage,
-      currentSummaryContent
-
+      currentSummaryContent,
+      isProcessing,
+      progress,
+      summaryType,
+      generatePlaceholderSummaries
     };
   }
 }
