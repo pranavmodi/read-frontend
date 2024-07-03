@@ -29,40 +29,64 @@
       </div>
     </footer>
 
-    <!-- Summary overlay -->
-    <div v-if="showSummaryOverlay" class="absolute inset-0 bg-white z-10 flex flex-col">
-      <div v-if="isProcessing" class="flex-grow flex flex-col items-center justify-center">
-        <div class="w-64 bg-gray-200 rounded-full h-6 dark:bg-gray-700 mb-4">
-          <div class="bg-blue-600 h-6 rounded-full" :style="{ width: `${progress}%` }"></div>
-        </div>
-        <p>Processing: {{ progress }}%</p>
+  <div v-if="showSummaryOverlay" class="absolute inset-0 bg-white z-10 flex flex-col">
+    <div v-if="isProcessing" class="flex-grow flex flex-col items-center justify-center">
+      <div class="w-64 bg-gray-200 rounded-full h-6 dark:bg-gray-700 mb-4">
+        <div class="bg-blue-600 h-6 rounded-full" :style="{ width: `${progress}%` }"></div>
       </div>
-      <div v-else class="flex-grow overflow-y-auto p-4">
-        <div class="mb-4">
-          <select v-model="summaryType" class="block w-full px-4 py-2 rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
-            <option value="book">Entire Book Summary</option>
-            <option value="chapters">Chapter Summaries</option>
-          </select>
-        </div>
-        <h2 class="text-2xl font-bold mb-4">{{ summaryType === 'book' ? 'Book Summary' : 'Chapter Summaries' }}</h2>
-        <div v-if="summaryType === 'book'">
-          <p>{{ bookSummary }}</p>
-        </div>
-        <div v-else>
-          <div v-for="(chapter, index) in chapterSummaries" :key="index" class="mb-4">
-            <h3 class="text-xl font-semibold">{{ chapter.title }}</h3>
-            <p>{{ chapter.content }}</p>
-          </div>
-        </div>
-      </div>
-      <footer class="bg-gray-100 shadow-md">
-        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
-          <button @click="toggleSummaryOverlay" :disabled="isProcessing" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded disabled:opacity-50">
-            Close Summary
+      <p>Processing: {{ progress }}%</p>
+    </div>
+    <div v-else class="flex-grow overflow-y-auto p-4">
+      <!-- Segmented Control -->
+      <div class="mb-6 flex justify-center">
+        <div class="inline-flex rounded-md shadow-sm" role="group">
+          <button 
+            @click="summaryType = 'book'" 
+            :class="[
+              'px-4 py-2 text-sm font-medium border transition-colors duration-200',
+              summaryType === 'book' 
+                ? 'bg-blue-500 text-white border-blue-600' 
+                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+            ]"
+          >
+            Entire Book Summary
+          </button>
+          <button 
+            @click="summaryType = 'chapters'" 
+            :class="[
+              'px-4 py-2 text-sm font-medium border transition-colors duration-200',
+              summaryType === 'chapters' 
+                ? 'bg-blue-500 text-white border-blue-600' 
+                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+            ]"
+          >
+            Chapter Summaries
           </button>
         </div>
-      </footer>
+      </div>
+
+      <!-- Content -->
+      <h2 class="text-2xl font-bold mb-4 text-center">
+        {{ summaryType === 'book' ? 'Book Summary' : 'Chapter Summaries' }}
+      </h2>
+      <div v-if="summaryType === 'book'">
+        <p>{{ bookSummary }}</p>
+      </div>
+      <div v-else>
+        <div v-for="(chapter, index) in chapterSummaries" :key="index" class="mb-4">
+          <h3 class="text-xl font-semibold">{{ chapter.title }}</h3>
+          <p>{{ chapter.content }}</p>
+        </div>
+      </div>
     </div>
+    <footer class="bg-gray-100 shadow-md">
+      <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+        <button @click="toggleSummaryOverlay" :disabled="isProcessing" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded disabled:opacity-50 transition-colors duration-200">
+          Close Summary
+        </button>
+      </div>
+    </footer>
+  </div>
 
     <!-- Toggle button for summary overlay -->
     <button @click="toggleSummaryOverlay" class="fixed bottom-4 right-4 bg-blue-500 text-white p-2 rounded-full shadow-lg">
@@ -368,11 +392,6 @@ export default {
           height: '100%',
           spread: 'always'
         });
-        // rendition.value = book.value.renderTo('epub-viewer', {
-        //   width: '100%',
-        //   height: '100%',
-        //   spread: 'always'
-        // });
 
         rendition.value.display();
         applyAdaptiveDifficulty();
