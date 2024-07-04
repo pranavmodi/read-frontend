@@ -148,9 +148,9 @@ export default {
       });
 
       socket.value.on('processing_complete', (data) => {
-        console.log('Processing complete event received:', data.book_title);
+        console.log('Processing complete event received:', data);
         console.log('the props book name', props.book.name);
-        if (data.book_title === props.book.name) {
+        if (data.book_name === props.book.name) {
           console.log('Processing complete for current book');
           isProcessing.value = false;
           getBookSummary();
