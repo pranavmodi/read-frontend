@@ -2,36 +2,29 @@
   <div class="reading-area flex flex-col h-screen relative">
     <!-- Original book view -->
     <div v-if="loading" class="flex-grow flex items-center justify-center">
-      <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
+      <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
     </div>
-    <div v-else-if="error" class="flex-grow flex items-center justify-center text-red-500 px-4 text-center">
+    <div v-else-if="error" class="flex-grow flex items-center justify-center text-red-500 px-4 text-center text-sm">
       {{ error }}
     </div>
     <div v-else ref="epubViewerRef" id="epub-viewer" class="flex-grow"></div>
     
     <footer class="bg-gray-100 shadow-md">
-      <div class="max-w-4xl mx-auto px-2 py-2 flex flex-wrap justify-between items-center">
-        <div class="flex items-center space-x-2 w-full sm:w-auto justify-between sm:justify-start">
-          <button @click="prevPage" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-3 rounded-full text-sm transition duration-300 ease-in-out transform hover:scale-105">
-            &#8592;
+      <div class="max-w-4xl mx-auto px-2 py-1 flex justify-between items-center">
+        <button @click="prevPage" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-2 rounded-full text-xs transition duration-300 ease-in-out transform hover:scale-105">
+          &#8592;
+        </button>
+        <div class="flex space-x-1">
+          <button @click="decreaseFontSize" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-2 rounded text-xs">
+            A-
           </button>
-          <div class="flex space-x-2">
-            <button @click="decreaseFontSize" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-3 rounded text-sm">
-              A-
-            </button>
-            <button @click="increaseFontSize" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-3 rounded text-sm">
-              A+
-            </button>
-          </div>
-          <button @click="nextPage" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-3 rounded-full text-sm transition duration-300 ease-in-out transform hover:scale-105">
-            &#8594;
+          <button @click="increaseFontSize" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-2 rounded text-xs">
+            A+
           </button>
         </div>
-        <div class="w-full sm:w-auto flex justify-center mt-2 sm:mt-0">
-          <button @click="toggleAdaptiveMode" :class="['bg-green-500 hover:bg-green-600 text-white font-bold py-1 px-2 rounded text-xs', {'opacity-50': !adaptiveModeEnabled}]">
-            {{ adaptiveModeEnabled ? 'Adaptive: ON' : 'Adaptive: OFF' }}
-          </button>
-        </div>
+        <button @click="nextPage" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-2 rounded-full text-xs transition duration-300 ease-in-out transform hover:scale-105">
+          &#8594;
+        </button>
       </div>
     </footer>
 
@@ -96,8 +89,8 @@
     </div>
 
     <!-- Toggle button for summary overlay -->
-    <button @click="toggleSummaryOverlay" class="fixed bottom-14 sm:bottom-4 right-4 bg-blue-500 text-white p-2 rounded-full shadow-lg z-20">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+    <button @click="toggleSummaryOverlay" class="fixed bottom-10 right-2 bg-blue-500 text-white p-1 rounded-full shadow-lg z-20">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
     </button>
   </div>
 </template>
@@ -716,11 +709,11 @@ footer {
 
 @media (max-width: 640px) {
   .reading-area {
-    height: calc(100% - 10px); /* Slight reduction to prevent overflow */
+    height: 80%; /* Full height of the container */
   }
   
   #epub-viewer {
-    height: calc(100vh - 90px); /* Adjust based on your footer height */
+    height: calc(100vh - 200px); /* Adjust based on your new footer height */
   }
 }
 
