@@ -134,21 +134,23 @@ export default {
     const bookTitle = ref(props.book.name || 'Unknown Book');
     // const db_bookTitle = ref(null);
 
-    const connectSocket = () => {
-      socket.value = io(API_ENDPOINT);
-      
+
+    const setupSocketListeners = () => {
+      if (!socket.value) return;
+
       socket.value.on('connect', () => {
         console.log('Socket connected');
-        console.log('the book title', bookTitle.value)
       });
-      
+
       socket.value.on('progress_update', (data) => {
+        console.log('Progress update:', data);
         progress.value = data.progress;
       });
 
       socket.value.on('processing_complete', (data) => {
-        console.log('Processing complete event received:', data);
-        if (data.book_name === props.book.name) {
+        console.log('Processing complete event received:', data.book_title);
+        console.log('the props book name', props.book.name);
+        if (data.book_title === props.book.name) {
           console.log('Processing complete for current book');
           isProcessing.value = false;
           getBookSummary();
@@ -159,12 +161,94 @@ export default {
       socket.value.on('disconnect', () => {
         console.log('Socket disconnected');
       });
+
+      socket.value.on('connect_error', (error) => {
+        console.error('Connection Error:', error);
+      });
     };
 
+
+    const connectSocket = () => {
+      if (socket.value && socket.value.connected) {
+        console.log('Socket already connected');
+        return;
+      }
+
+      socket.value = io(API_ENDPOINT, {
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: Infinity,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        timeout: 20000,
+      });
+
+      setupSocketListeners();
+    };
+    // const connectSocket = () => {
+    //   socket.value = io(API_ENDPOINT, {
+    //     transports: ['websocket', 'polling'], // Try both WebSocket and long-polling
+    //     reconnection: true,
+    //     reconnectionAttempts: Infinity,
+    //     reconnectionDelay: 1000,
+    //     reconnectionDelayMax: 5000,
+    //     timeout: 20000,
+    //     forceNew: true
+    //   });
+      
+    //   socket.value.on('connect', () => {
+    //     console.log('Socket connected');
+    //     console.log('the book title', bookTitle.value)
+    //   });
+      
+    //   socket.value.on('progress_update', (data) => {
+    //     progress.value = data.progress;
+    //   });
+
+    //   socket.value.on('processing_complete', (data) => {
+    //     console.log('Processing complete event received:', data);
+    //     if (data.book_name === props.book.name) {
+    //       console.log('Processing complete for current book');
+    //       isProcessing.value = false;
+    //       getBookSummary();
+    //       getChapterSummaries();
+    //     }
+    //   });
+
+    //   socket.value.on('disconnect', (reason) => {
+    //     console.log('Socket disconnected', reason);
+    //   });
+    // };
+
+    // socket.value.on('connect_error', (error) => {
+    //   console.log('Connection Error:', error);
+    // });
+
+    // socket.value.on('disconnect', (reason) => {
+    //   console.log('Disconnected:', reason);
+    //   if (reason === 'io server disconnect') {
+    //     // the disconnection was initiated by the server, you need to reconnect manually
+    //     socket.value.connect();
+    //   }
+    //   // else the socket will automatically try to reconnect
+    // });
+
+    // socket.value.on('reconnect_attempt', (attemptNumber) => {
+    //   console.log('Attempting reconnection:', attemptNumber);
+    // });
+
+    // socket.value.on('reconnect_error', (error) => {
+    //   console.error('Reconnection error:', error);
+    // });
+
+    // socket.value.on('reconnect_failed', () => {
+    //   console.error('Failed to reconnect');
+    // });
+
     const disconnectSocket = () => {
-      console.log("in disconnect now");
       if (socket.value) {
         socket.value.disconnect();
+        socket.value = null;
       }
     };
 
