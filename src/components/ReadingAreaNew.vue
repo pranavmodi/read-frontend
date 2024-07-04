@@ -2,95 +2,102 @@
   <div class="reading-area flex flex-col h-screen relative">
     <!-- Original book view -->
     <div v-if="loading" class="flex-grow flex items-center justify-center">
-      <div class="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
+      <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
     </div>
-    <div v-else-if="error" class="flex-grow flex items-center justify-center text-red-500">
+    <div v-else-if="error" class="flex-grow flex items-center justify-center text-red-500 px-4 text-center">
       {{ error }}
     </div>
     <div v-else ref="epubViewerRef" id="epub-viewer" class="flex-grow"></div>
     
     <footer class="bg-gray-100 shadow-md">
-      <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
-        <button @click="prevPage" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out transform hover:scale-105">
-          &#8592; Previous
-        </button>
-        <button @click="decreaseFontSize" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
-          A-
-        </button>
-        <button @click="increaseFontSize" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
-          A+
-        </button>
-        <button @click="nextPage" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out transform hover:scale-105">
-          Next &#8594;
-        </button>
-        <button @click="toggleAdaptiveMode" :class="['bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded', {'opacity-50': !adaptiveModeEnabled}]">
-          {{ adaptiveModeEnabled ? 'Adaptive: ON' : 'Adaptive: OFF' }}
-        </button>
-      </div>
-    </footer>
-
-  <div v-if="showSummaryOverlay" class="absolute inset-0 bg-white z-10 flex flex-col">
-    <div v-if="isProcessing" class="flex-grow flex flex-col items-center justify-center">
-      <div class="w-64 bg-gray-200 rounded-full h-6 dark:bg-gray-700 mb-4">
-        <div class="bg-blue-600 h-6 rounded-full" :style="{ width: `${progress}%` }"></div>
-      </div>
-      <p>Processing: {{ progress }}%</p>
-    </div>
-    <div v-else class="flex-grow overflow-y-auto p-4">
-      <!-- Segmented Control -->
-      <div class="mb-6 flex justify-center">
-        <div class="inline-flex rounded-md shadow-sm" role="group">
-          <button 
-            @click="summaryType = 'book'" 
-            :class="[
-              'px-4 py-2 text-sm font-medium border transition-colors duration-200',
-              summaryType === 'book' 
-                ? 'bg-blue-500 text-white border-blue-600' 
-                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-            ]"
-          >
-            Entire Book Summary
+      <div class="max-w-4xl mx-auto px-2 py-2 flex flex-wrap justify-between items-center">
+        <div class="flex items-center space-x-2 w-full sm:w-auto justify-between sm:justify-start">
+          <button @click="prevPage" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-3 rounded-full text-sm transition duration-300 ease-in-out transform hover:scale-105">
+            &#8592;
           </button>
-          <button 
-            @click="summaryType = 'chapters'" 
-            :class="[
-              'px-4 py-2 text-sm font-medium border transition-colors duration-200',
-              summaryType === 'chapters' 
-                ? 'bg-blue-500 text-white border-blue-600' 
-                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-            ]"
-          >
-            Chapter Summaries
+          <div class="flex space-x-2">
+            <button @click="decreaseFontSize" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-3 rounded text-sm">
+              A-
+            </button>
+            <button @click="increaseFontSize" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-3 rounded text-sm">
+              A+
+            </button>
+          </div>
+          <button @click="nextPage" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-3 rounded-full text-sm transition duration-300 ease-in-out transform hover:scale-105">
+            &#8594;
+          </button>
+        </div>
+        <div class="w-full sm:w-auto flex justify-center mt-2 sm:mt-0">
+          <button @click="toggleAdaptiveMode" :class="['bg-green-500 hover:bg-green-600 text-white font-bold py-1 px-2 rounded text-xs', {'opacity-50': !adaptiveModeEnabled}]">
+            {{ adaptiveModeEnabled ? 'Adaptive: ON' : 'Adaptive: OFF' }}
           </button>
         </div>
       </div>
+    </footer>
 
-      <!-- Content -->
-      <h2 class="text-2xl font-bold mb-4 text-center">
-        {{ summaryType === 'book' ? 'Book Summary' : 'Chapter Summaries' }}
-      </h2>
-      <div v-if="summaryType === 'book'">
-        <p>{{ bookSummary }}</p>
+    <!-- Summary Overlay -->
+    <div v-if="showSummaryOverlay" class="absolute inset-0 bg-white z-10 flex flex-col overflow-hidden">
+      <div v-if="isProcessing" class="flex-grow flex flex-col items-center justify-center p-4">
+        <div class="w-64 bg-gray-200 rounded-full h-6 dark:bg-gray-700 mb-4">
+          <div class="bg-blue-600 h-6 rounded-full" :style="{ width: `${progress}%` }"></div>
+        </div>
+        <p class="text-sm sm:text-base">Processing: {{ progress }}%</p>
       </div>
-      <div v-else>
-        <div v-for="(chapter, index) in chapterSummaries" :key="index" class="mb-4">
-          <h3 class="text-xl font-semibold">{{ chapter.title }}</h3>
-          <p>{{ chapter.content }}</p>
+      <div v-else class="flex-grow overflow-y-auto p-4">
+        <!-- Segmented Control -->
+        <div class="mb-4 sm:mb-6 flex justify-center">
+          <div class="inline-flex rounded-md shadow-sm" role="group">
+            <button 
+              @click="summaryType = 'book'" 
+              :class="[
+                'px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border transition-colors duration-200',
+                summaryType === 'book' 
+                  ? 'bg-blue-500 text-white border-blue-600' 
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              ]"
+            >
+              Book Summary
+            </button>
+            <button 
+              @click="summaryType = 'chapters'" 
+              :class="[
+                'px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border transition-colors duration-200',
+                summaryType === 'chapters' 
+                  ? 'bg-blue-500 text-white border-blue-600' 
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              ]"
+            >
+              Chapters
+            </button>
+          </div>
+        </div>
+
+        <!-- Content -->
+        <h2 class="text-xl sm:text-2xl font-bold mb-4 text-center">
+          {{ summaryType === 'book' ? 'Book Summary' : 'Chapter Summaries' }}
+        </h2>
+        <div v-if="summaryType === 'book'" class="text-sm sm:text-base">
+          <p>{{ bookSummary }}</p>
+        </div>
+        <div v-else>
+          <div v-for="(chapter, index) in chapterSummaries" :key="index" class="mb-4">
+            <h3 class="text-lg sm:text-xl font-semibold">{{ chapter.title }}</h3>
+            <p class="text-sm sm:text-base">{{ chapter.content }}</p>
+          </div>
         </div>
       </div>
+      <footer class="bg-gray-100 shadow-md">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+          <button @click="toggleSummaryOverlay" :disabled="isProcessing" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded text-sm sm:text-base disabled:opacity-50 transition-colors duration-200">
+            Close Summary
+          </button>
+        </div>
+      </footer>
     </div>
-    <footer class="bg-gray-100 shadow-md">
-      <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
-        <button @click="toggleSummaryOverlay" :disabled="isProcessing" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded disabled:opacity-50 transition-colors duration-200">
-          Close Summary
-        </button>
-      </div>
-    </footer>
-  </div>
 
     <!-- Toggle button for summary overlay -->
-    <button @click="toggleSummaryOverlay" class="fixed bottom-4 right-4 bg-blue-500 text-white p-2 rounded-full shadow-lg">
-      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+    <button @click="toggleSummaryOverlay" class="fixed bottom-14 sm:bottom-4 right-4 bg-blue-500 text-white p-2 rounded-full shadow-lg z-20">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
     </button>
   </div>
 </template>
@@ -692,9 +699,8 @@ export default {
 </script>
 
 <style scoped>
-
 .reading-area {
-  height: 80vh;
+  height: 100%;
   display: flex;
   flex-direction: column;
 }
@@ -706,6 +712,16 @@ export default {
 
 footer {
   flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .reading-area {
+    height: calc(100% - 10px); /* Slight reduction to prevent overflow */
+  }
+  
+  #epub-viewer {
+    height: calc(100vh - 90px); /* Adjust based on your footer height */
+  }
 }
 
 </style>
