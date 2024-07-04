@@ -143,7 +143,6 @@ export default {
       });
 
       socket.value.on('progress_update', (data) => {
-        console.log('Progress update:', data);
         progress.value = data.progress;
       });
 
