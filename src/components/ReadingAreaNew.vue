@@ -132,7 +132,29 @@ export default {
     const summaryType = ref('book');
     const currentChapterURI = ref('');
     const bookTitle = ref(props.book.name || 'Unknown Book');
+    const touchStartX = ref(0);
+    const touchEndX = ref(0);
     // const db_bookTitle = ref(null);
+
+    const handleTouchStart = (e) => {
+      touchStartX.value = e.changedTouches[0].screenX;
+    };
+
+    const handleTouchEnd = (e) => {
+      touchEndX.value = e.changedTouches[0].screenX;
+      handleSwipe();
+    };
+
+    const handleSwipe = () => {
+      const swipeThreshold = 50; // minimum distance traveled to be considered a swipe
+      const swipeDistance = touchEndX.value - touchStartX.value;
+      
+      if (swipeDistance > swipeThreshold) {
+        prevPage();
+      } else if (swipeDistance < -swipeThreshold) {
+        nextPage();
+      }
+    };
 
 
     const setupSocketListeners = () => {
@@ -624,6 +646,12 @@ export default {
     onMounted(() => {
       loadBook();
       window.addEventListener('resize', adjustViewerHeight);
+      
+      // Add touch event listeners
+      if (epubViewerRef.value) {
+        epubViewerRef.value.addEventListener('touchstart', handleTouchStart, false);
+        epubViewerRef.value.addEventListener('touchend', handleTouchEnd, false);
+      }
     });
 
     onUnmounted(() => {
@@ -632,7 +660,12 @@ export default {
       }
       document.removeEventListener('keyup', handleKeyPress);
       window.removeEventListener('resize', adjustViewerHeight);
-      disconnectSocket();
+      
+      // Remove touch event listeners
+      if (epubViewerRef.value) {
+        epubViewerRef.value.removeEventListener('touchstart', handleTouchStart, false);
+        epubViewerRef.value.removeEventListener('touchend', handleTouchEnd, false);
+      }
     });
 
     watch(() => props.book, loadBook);
@@ -664,7 +697,6 @@ export default {
       nextPage,
       loading,
       error,
-      epubViewerRef,
       fontSize,
       increaseFontSize,
       decreaseFontSize,
@@ -685,7 +717,8 @@ export default {
       isProcessing,
       progress,
       summaryType,
-      generatePlaceholderSummaries
+      generatePlaceholderSummaries,
+      epubViewerRef
     };
   }
 }
