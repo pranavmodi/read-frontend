@@ -153,7 +153,7 @@ export default {
           console.log('Processing complete for current book');
           isProcessing.value = false;
           getBookSummary();
-          getChapterSummaries();
+          getAllSummaries();
         }
       });
 
@@ -309,6 +309,22 @@ export default {
       }
     };
 
+    // const generateChapterIdentifier = (chapterHref) => {
+    //   try {
+    //     const bookName = props.book.name || 'UnknownBook';
+    //     // const chapterUri = chapterHref.split('/').pop(); // Get the filename from the href
+    //     const chapterIdentifier = `${bookName}_Chapter_${chapterHref}`;
+        
+    //     // Encode the entire chapter identifier
+    //     // console.log(' Chapter Identifier:', chapterIdentifier);
+    //     const encodedChapterIdentifier = encodeURIComponent(chapterIdentifier);
+    //     return encodedChapterIdentifier;
+    //   } catch (error) {
+    //     console.error('Error generating chapter identifier:', error);
+    //     return '';
+    //   }
+    // };
+
     const generateChapterIdentifier = (chapterHref) => {
       try {
         const bookName = props.book.name || 'UnknownBook';
@@ -317,58 +333,119 @@ export default {
         
         // Encode the entire chapter identifier
         // console.log(' Chapter Identifier:', chapterIdentifier);
-        const encodedChapterIdentifier = encodeURIComponent(chapterIdentifier);
-        return encodedChapterIdentifier;
+        // const encodedChapterIdentifier = encodeURIComponent(chapterIdentifier);
+        return chapterIdentifier;
       } catch (error) {
         console.error('Error generating chapter identifier:', error);
         return '';
       }
     };
 
-    const getChapterSummaries = async () => {
+    const getAllSummaries = async () => {
       if (!book.value) {
         console.error("Book not loaded");
         return;
       }
-
+      console.log('in all summaries')
       const chapters = book.value.spine.spineItems;
-      const summaryPromises = chapters.map(async (chapter, index) => {
-      const chapterId = generateChapterIdentifier(chapter.href);
+      const chapterIds = chapters.map(chapter => generateChapterIdentifier(chapter.href));
+      const bookName = props.book.name || "Unknown Book";
 
       try {
-        const response = await fetch(`${API_ENDPOINT}/chapter-summary/${chapterId}`);
+        const response = await fetch(`${API_ENDPOINT}/all-summaries`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            bookName: bookName,
+            chapterIds: chapterIds
+          })
+        });
+
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
+
         const data = await response.json();
-        
+
         if (data.status === 'success') {
-          return {
-            title: `Chapter ${index + 1}`,
-            content: data.chapter_summary.summary
-          };
+          chapterSummaries.value = chapters.map((chapter, index) => {
+            const chapterId = generateChapterIdentifier(chapter.href);
+            const summaryData = data.summaries[chapterId];
+            
+            let content;
+            if (summaryData && summaryData.status === 'success') {
+              if (summaryData.chapter_summary.is_main_content) {
+                content = summaryData.chapter_summary.summary;
+              } else {
+                content = "This is not relevant information";
+              }
+            } else {
+              content = "Summary is pending for this chapter.";
+            }
+
+            return {
+              title: `Chapter ${index + 1}`,
+              content: content
+            };
+          });
         } else {
-          return {
-            title: `Chapter ${index + 1}`,
-            content: "Summary is pending for this chapter."
-          };
+          throw new Error('Failed to fetch summaries');
         }
       } catch (error) {
-        console.error("Error fetching summary for chapter:", chapter.href, error);
-        return {
+        console.error("Error fetching chapter summaries:", error);
+        chapterSummaries.value = chapters.map((_, index) => ({
           title: `Chapter ${index + 1}`,
           content: "An error occurred while fetching the chapter summary."
-        };
+        }));
       }
-    });
+    };
 
-    try {
-      const summaries = await Promise.all(summaryPromises);
-      chapterSummaries.value = summaries;
-    } catch (error) {
-      console.error("Error fetching chapter summaries:", error);
-    }
-  };
+    // const getChapterSummaries = async () => {
+    //   if (!book.value) {
+    //     console.error("Book not loaded");
+    //     return;
+    //   }
+
+    //   const chapters = book.value.spine.spineItems;
+    //   const summaryPromises = chapters.map(async (chapter, index) => {
+    //   const chapterId = generateChapterIdentifier(chapter.href);
+
+    //   try {
+    //     const response = await fetch(`${API_ENDPOINT}/chapter-summary/${chapterId}`);
+    //     if (!response.ok) {
+    //       throw new Error('Network response was not ok');
+    //     }
+    //     const data = await response.json();
+        
+    //     if (data.status === 'success') {
+    //       return {
+    //         title: `Chapter ${index + 1}`,
+    //         content: data.chapter_summary.summary
+    //       };
+    //     } else {
+    //       return {
+    //         title: `Chapter ${index + 1}`,
+    //         content: "Summary is pending for this chapter."
+    //       };
+    //     }
+    //   } catch (error) {
+    //     console.error("Error fetching summary for chapter:", chapter.href, error);
+    //     return {
+    //       title: `Chapter ${index + 1}`,
+    //       content: "An error occurred while fetching the chapter summary."
+    //     };
+    //   }
+    // });
+// 
+  //   try {
+  //     const summaries = await Promise.all(summaryPromises);
+  //     chapterSummaries.value = summaries;
+  //   } catch (error) {
+  //     console.error("Error fetching chapter summaries:", error);
+  //   }
+  // };
 
     const simulateTextSimplification = (text) => {
       // This is a placeholder function. In a real implementation, you'd use an AI service to simplify the text.
@@ -571,7 +648,8 @@ export default {
       if (!newValue) {
         // Processing is complete, update the UI
         getBookSummary();
-        getChapterSummaries();
+        // getChapterSummaries();
+        getAllSummaries();
       }
     });
 
