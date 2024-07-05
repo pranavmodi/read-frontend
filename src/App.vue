@@ -4,7 +4,7 @@
      <button @click="gotoHomePage" class="home-button focus:outline-none focus:ring-2 focus:ring-blue-300 rounded-full p-2 transition duration-300 ease-in-out transform hover:scale-110">
         <img src="@/assets/home.png" alt="Home" class="w-6 h-6 sm:w-8 sm:h-8"/>
       </button>
-      <h1 class="font-bold text-xl sm:text-3xl text-blue-600">Little AI-Assisted Reader</h1>
+      <h1 class="font-bold text-xl sm:text-3xl text-blue-600">AI-Assisted Reader</h1>
       <div class="w-6 sm:w-8"></div> <!-- Placeholder for alignment -->
     </header>
 
