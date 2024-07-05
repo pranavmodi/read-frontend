@@ -142,6 +142,7 @@ export default {
     const bookTitle = ref(props.book.name || 'Unknown Book');
     const touchStartX = ref(0);
     const touchEndX = ref(0);
+    const touchStartTime = ref(0);
     // const db_bookTitle = ref(null);
 
 
@@ -158,7 +159,8 @@ export default {
 
     const handleTouchStart = (event) => {
       try {
-        touchStartX.value = event.changedTouches[0].screenX;
+        touchStartX.value = event.changedTouches[0].clientX;
+        touchStartTime.value = Date.now();
       } catch (error) {
         console.error('Error in handleTouchStart:', error);
       }
@@ -166,8 +168,8 @@ export default {
 
     const handleTouchEnd = (event) => {
       try {
-        touchEndX.value = event.changedTouches[0].screenX;
-        handleSwipe();
+        touchEndX.value = event.changedTouches[0].clientX;
+        handleTapOrSwipe();
       } catch (error) {
         console.error('Error in handleTouchEnd:', error);
       }
@@ -176,21 +178,54 @@ export default {
     const resetTouchValues = () => {
       touchStartX.value = 0;
       touchEndX.value = 0;
+      touchStartTime.value = 0;
     };
 
-    const handleSwipe = () => {
-      const swipeThreshold = 10;
-      const swipeDistance = touchEndX.value - touchStartX.value;
-      
-      if (swipeDistance > swipeThreshold) {
-        prevPage();
-      } else if (swipeDistance < -swipeThreshold) {
-        nextPage();
+
+    const handleTapOrSwipe = () => {
+      const tapThreshold = 10; // maximum distance moved to be considered a tap
+      const swipeThreshold = 50; // minimum distance moved to be considered a swipe
+      const timeThreshold = 300; // maximum time in ms for a swipe
+
+      const touchDistance = Math.abs(touchEndX.value - touchStartX.value);
+      const touchTime = Date.now() - touchStartTime.value;
+
+      if (touchDistance < tapThreshold && touchTime < timeThreshold) {
+        handleTap(touchEndX.value);
+      } else if (touchDistance > swipeThreshold && touchTime < timeThreshold) {
+        handleSwipe();
       }
-      
+
       resetTouchValues();
     };
 
+    
+    const handleSwipe = () => {
+      const swipeDistance = touchEndX.value - touchStartX.value;
+      
+      if (swipeDistance > 0) {
+        prevPage();
+      } else if (swipeDistance < 0) {
+        nextPage();
+      }
+    };
+
+    const handleTap = (x) => {
+      const viewerElement = document.getElementById('epub-viewer');
+      if (!viewerElement) return;
+
+      const viewerWidth = viewerElement.offsetWidth;
+      const tapPosition = x - viewerElement.getBoundingClientRect().left;
+
+      viewerElement.classList.add('tapped');
+      setTimeout(() => viewerElement.classList.remove('tapped'), 200);
+
+      if (tapPosition < viewerWidth / 2) {
+        prevPage();
+      } else {
+        nextPage();
+      }
+    };
 
     const setupSocketListeners = () => {
       if (!socket.value) return;
@@ -834,5 +869,22 @@ footer {
     transition: opacity 0.3s ease;
 
   }
+
+#epub-viewer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+#epub-viewer.tapped::before {
+  opacity: 1;
+}
 }
 </style>
