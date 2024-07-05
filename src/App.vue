@@ -10,7 +10,15 @@
 
     <main class="container mx-auto px-4 py-8 flex-grow">
       <template v-if="!selectedBook">
-        <!-- Loading overlay (unchanged) -->
+        <div v-if="isBookLoading" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div class="bg-white p-4 sm:p-8 rounded-lg shadow-xl text-center">
+            <h3 class="text-lg sm:text-xl font-bold mb-4">Loading Book</h3>
+            <div class="w-48 sm:w-64 h-4 bg-gray-200 rounded-full overflow-hidden">
+              <div class="h-full bg-blue-500 transition-all duration-300 ease-out" :style="{ width: `${bookLoadingProgress}%` }"></div>
+            </div>
+            <p class="mt-2 text-sm sm:text-base">{{ bookLoadingProgress }}%</p>
+          </div>
+        </div>
         <h2 class="text-2xl sm:text-4xl font-bold mb-4 sm:mb-8 text-gray-800 text-center">Book Library</h2>
         <!-- Loading and error states (unchanged) -->
         <div v-if="!loading && !error" class="grid-container overflow-auto w-full max-w-7xl mx-auto">
