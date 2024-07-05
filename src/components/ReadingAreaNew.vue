@@ -179,7 +179,7 @@ export default {
     };
 
     const handleSwipe = () => {
-      const swipeThreshold = 50;
+      const swipeThreshold = 10;
       const swipeDistance = touchEndX.value - touchStartX.value;
       
       if (swipeDistance > swipeThreshold) {
