@@ -156,17 +156,30 @@ export default {
       return `calc(100vh - ${props.headerHeight}px - 90px)`; // 90px for mobile footer, adjust if needed
     });
 
-    const handleTouchStart = (e) => {
-      touchStartX.value = e.changedTouches[0].screenX;
+    const handleTouchStart = (event) => {
+      try {
+        touchStartX.value = event.changedTouches[0].screenX;
+      } catch (error) {
+        console.error('Error in handleTouchStart:', error);
+      }
     };
 
-    const handleTouchEnd = (e) => {
-      touchEndX.value = e.changedTouches[0].screenX;
-      handleSwipe();
+    const handleTouchEnd = (event) => {
+      try {
+        touchEndX.value = event.changedTouches[0].screenX;
+        handleSwipe();
+      } catch (error) {
+        console.error('Error in handleTouchEnd:', error);
+      }
+    };
+
+    const resetTouchValues = () => {
+      touchStartX.value = 0;
+      touchEndX.value = 0;
     };
 
     const handleSwipe = () => {
-      const swipeThreshold = 50; // minimum distance traveled to be considered a swipe
+      const swipeThreshold = 50;
       const swipeDistance = touchEndX.value - touchStartX.value;
       
       if (swipeDistance > swipeThreshold) {
@@ -174,6 +187,8 @@ export default {
       } else if (swipeDistance < -swipeThreshold) {
         nextPage();
       }
+      
+      resetTouchValues();
     };
 
 
@@ -559,7 +574,7 @@ export default {
     };
 
     const loadBook = async () => {
-      console.log('in loadbook', props.book.name);
+      console.log('in loadbook');
       if (book.value) {
         book.value.destroy();
       }
@@ -577,6 +592,12 @@ export default {
         });
 
         await rendition.value.display();
+
+        rendition.value.on('touchstart', handleTouchStart);
+        rendition.value.on('touchend', handleTouchEnd);
+        // rendition.value.on('touchmove', (e) => {
+        //   console.log('Touch move event', e);
+        // });
 
         rendition.value.on('keyup', handleKeyPress);
         rendition.value.themes.fontSize(`${fontSize.value}px`);
@@ -614,13 +635,23 @@ export default {
 
     const prevPage = () => {
       if (rendition.value) {
+        const viewer = document.getElementById('epub-viewer');
+        viewer.style.opacity = '0.5';
         rendition.value.prev();
+        setTimeout(() => {
+          viewer.style.opacity = '1';
+        }, 300);
       }
     };
 
     const nextPage = () => {
       if (rendition.value) {
+        const viewer = document.getElementById('epub-viewer');
+        viewer.style.opacity = '0.5';
         rendition.value.next();
+        setTimeout(() => {
+          viewer.style.opacity = '1';
+        }, 300);
       }
     };
 
@@ -676,17 +707,29 @@ export default {
       }
     };
 
+    // const addTouchListeners = () => {
+    //   const epubViewerElement = document.getElementById('epub-viewer');
+    //   if (epubViewerElement) {
+    //     console.log('Adding touch event listeners');
+    //     epubViewerElement.addEventListener('touchstart', handleTouchStart, { passive: true });
+    //     epubViewerElement.addEventListener('touchend', handleTouchEnd, { passive: true });
+        
+    //     // Add logging to check if events are firing
+    //     epubViewerElement.addEventListener('touchmove', (e) => {
+    //       console.log('Touch move event', e);
+    //     }, { passive: true });
+    //   } else {
+    //     console.error('epub-viewer element not found');
+    //   }
+    // };
+
     const addTouchListeners = () => {
-      setTimeout(() => {
-        const epubViewerElement = document.getElementById('epub-viewer');
-        if (epubViewerElement) {
-          console.log('Adding touch event listeners');
-          epubViewerElement.addEventListener('touchstart', handleTouchStart, false);
-          epubViewerElement.addEventListener('touchend', handleTouchEnd, false);
-        } else {
-          console.error('epub-viewer element not found');
-        }
-      }, 100); // Small delay to ensure DOM update
+      console.log('Adding touch event listeners to window');
+      window.addEventListener('touchstart', handleTouchStart, { passive: true });
+      window.addEventListener('touchend', handleTouchEnd, { passive: true });
+      window.addEventListener('touchmove', (e) => {
+        console.log('Touch move event', e);
+      }, { passive: true });
     };
 
     onMounted(() => {
@@ -695,17 +738,15 @@ export default {
     });
 
     onUnmounted(() => {
+      if (rendition.value) {
+        rendition.value.off('touchstart', handleTouchStart);
+        rendition.value.off('touchend', handleTouchEnd);
+      }
       if (book.value) {
         book.value.destroy();
       }
       document.removeEventListener('keyup', handleKeyPress);
       window.removeEventListener('resize', adjustViewerHeight);
-      
-      // Remove touch event listeners
-      if (epubViewerRef.value) {
-        epubViewerRef.value.removeEventListener('touchstart', handleTouchStart, false);
-        epubViewerRef.value.removeEventListener('touchend', handleTouchEnd, false);
-      }
     });
 
     watch(() => props.book, loadBook);
@@ -779,6 +820,8 @@ export default {
 #epub-viewer {
   height: v-bind(epubViewerHeight);
   overflow-y: auto;
+  transition: opacity 0.3s ease;
+
 }
 
 footer {
@@ -788,6 +831,8 @@ footer {
 @media (max-width: 640px) {
   #epub-viewer {
     height: v-bind(mobileEpubViewerHeight);
+    transition: opacity 0.3s ease;
+
   }
 }
 </style>
