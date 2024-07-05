@@ -740,14 +740,5 @@ footer {
   flex-shrink: 0;
 }
 
-@media (max-width: 640px) {
-  .reading-area {
-    height: 80%; /* Full height of the container */
-  }
-  
-  #epub-viewer {
-    height: calc(100vh - 40px); /* Adjust based on your new footer height */
-  }
-}
 
 </style>
