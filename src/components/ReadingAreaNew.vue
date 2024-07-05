@@ -623,7 +623,8 @@ export default {
         rendition.value = book.value.renderTo('epub-viewer', {
           width: '100%',
           height: '100%',
-          spread: 'always'
+          spread: 'always',
+          allowScriptedContent: true
         });
 
         await rendition.value.display();
