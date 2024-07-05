@@ -40,10 +40,11 @@
         v-if="selectedBook"
         :book="selectedBook"
         :headerHeight="headerHeight"
-      />
+        :contentHeight="contentHeight"
+        />
     </main>
 
-    <footer class="bg-white shadow-md py-4 px-6">
+    <footer class="fixed bottom-0 left-0 right-0 bg-white shadow-md py-4 px-6 footer-height">
       <div class="container mx-auto flex justify-center">
         <template v-if="!selectedBook">
           <input type="file" ref="fileInput" @change="onFileUpload" accept=".epub" class="hidden" :disabled="uploading" />
@@ -57,7 +58,7 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import { API_ENDPOINT } from '@/config';
 // import ReadingArea from './components/ReadingArea.vue';
@@ -80,6 +81,12 @@ export default {
     const isBookLoading = ref(false);
     const bookLoadingProgress = ref(0);
     const headerHeight = ref(64);
+    const footerHeight = ref(56);
+
+
+    const contentHeight = computed(() => {
+      return `calc(100vh - ${headerHeight.value}px - ${footerHeight.value}px)`;
+    });
 
     const fetchBooks = async () => {
       try {
@@ -206,7 +213,9 @@ export default {
       handleCloseChat,
       handleCloseSummary,
       handleResize,
-      headerHeight
+      headerHeight,
+      footerHeight,
+      contentHeight
     };
   }
 }
@@ -225,13 +234,22 @@ export default {
   overflow: hidden;
 }
 
+
 .header-height {
-  height: 64px; /* Adjust this value based on your header's actual height */
+  height: 64px;
 }
 
-.content-top-padding {
-  padding-top: 64px; /* Should match the header height */
+.footer-height {
+  height: 56px;
 }
+
+.content-area {
+  padding-top: 64px; /* Should match the header height */
+  padding-bottom: 56px; /* Should match the footer height */
+  height: v-bind(contentHeight);
+  overflow-y: auto;
+}
+
 
 /* Mobile-specific styles */
 /* @media (max-width: 640px) {

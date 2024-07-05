@@ -110,7 +110,11 @@ export default {
     },
     headerHeight: {
       type: Number,
-      default: 64 // Default header height
+      required: true
+    },
+    contentHeight: {
+      type: String,
+      required: true
     }
   },
   setup(props) {
@@ -140,9 +144,13 @@ export default {
     const touchEndX = ref(0);
     // const db_bookTitle = ref(null);
 
-    const epubViewerHeight = computed(() => {
-      return `calc(100vh - ${props.headerHeight}px - 50px)`; // 50px for footer, adjust if needed
-    });
+
+    const epubViewerHeight = computed(() => props.contentHeight);
+
+
+    // const epubViewerHeight = computed(() => {
+    //   return `calc(100vh - ${props.headerHeight}px - 50px)`; // 50px for footer, adjust if needed
+    // });
 
     const mobileEpubViewerHeight = computed(() => {
       return `calc(100vh - ${props.headerHeight}px - 90px)`; // 90px for mobile footer, adjust if needed
@@ -747,9 +755,8 @@ export default {
 }
 
 #epub-viewer {
-  flex-grow: 1;
-  overflow: hidden;
   height: v-bind(epubViewerHeight);
+  overflow-y: auto;
 }
 
 footer {
