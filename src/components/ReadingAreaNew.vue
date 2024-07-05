@@ -734,11 +734,21 @@ export default {
 #epub-viewer {
   flex-grow: 1;
   overflow: hidden;
+  height: calc(100vh - 50px); /* Adjust based on your footer height for desktop */
 }
 
 footer {
   flex-shrink: 0;
 }
 
+@media (max-width: 640px) {
+  .reading-area {
+    height: calc(100% - 10px); /* Slight reduction to prevent overflow */
+  }
+
+  #epub-viewer {
+    height: calc(100vh - 90px); /* Adjust based on your footer height for mobile */
+  }
+}
 
 </style>
