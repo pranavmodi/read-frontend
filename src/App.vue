@@ -1,14 +1,14 @@
 <template>
-  <div class="min-h-screen bg-gray-100 flex flex-col pt-16">
-    <header class="fixed top-0 left-0 right-0 bg-white shadow-md text-gray-800 py-4 px-6 flex justify-between items-center z-10">
-      <button @click="gotoHomePage" class="home-button focus:outline-none focus:ring-2 focus:ring-blue-300 rounded-full p-2 transition duration-300 ease-in-out transform hover:scale-110">
+  <div class="min-h-screen bg-gray-100 flex flex-col">
+    <header class="fixed top-0 left-0 right-0 bg-white shadow-md text-gray-800 py-4 px-6 flex justify-between items-center z-10 header-height">
+     <button @click="gotoHomePage" class="home-button focus:outline-none focus:ring-2 focus:ring-blue-300 rounded-full p-2 transition duration-300 ease-in-out transform hover:scale-110">
         <img src="@/assets/home.png" alt="Home" class="w-6 h-6 sm:w-8 sm:h-8"/>
       </button>
       <h1 class="font-bold text-xl sm:text-3xl text-blue-600">Little AI-Assisted Reader</h1>
       <div class="w-6 sm:w-8"></div> <!-- Placeholder for alignment -->
     </header>
 
-    <main class="container mx-auto px-4 pt-20 pb-8 flex-grow">
+    <main class="container mx-auto px-4 pb-8 flex-grow content-top-padding">
       <template v-if="!selectedBook">
         <div v-if="isBookLoading" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div class="bg-white p-4 sm:p-8 rounded-lg shadow-xl text-center">
@@ -39,6 +39,7 @@
       <ReadingAreaNew
         v-if="selectedBook"
         :book="selectedBook"
+        :headerHeight="headerHeight"
       />
     </main>
 
@@ -78,6 +79,7 @@ export default {
     const fileInput = ref(null);
     const isBookLoading = ref(false);
     const bookLoadingProgress = ref(0);
+    const headerHeight = ref(64);
 
     const fetchBooks = async () => {
       try {
@@ -203,7 +205,8 @@ export default {
       toggleChat,
       handleCloseChat,
       handleCloseSummary,
-      handleResize
+      handleResize,
+      headerHeight
     };
   }
 }
@@ -222,14 +225,32 @@ export default {
   overflow: hidden;
 }
 
+.header-height {
+  height: 64px; /* Adjust this value based on your header's actual height */
+}
+
+.content-top-padding {
+  padding-top: 64px; /* Should match the header height */
+}
+
 /* Mobile-specific styles */
-@media (max-width: 640px) {
+/* @media (max-width: 640px) {
   .book-thumbnail {
     @apply touch-manipulation;
   }
 
   button, .home-button {
     @apply min-w-[44px] min-h-[44px];
+  }
+} */
+
+
+@media (max-width: 640px) {
+  .header-height {
+    height: 56px; /* Smaller height for mobile if needed */
+  }
+  .content-top-padding {
+    padding-top: 56px; /* Should match the mobile header height */
   }
 }
 </style>

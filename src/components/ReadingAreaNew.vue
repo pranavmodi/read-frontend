@@ -1,5 +1,5 @@
 <template>
-  <div class="reading-area flex flex-col h-screen relative">
+  <div class="reading-area flex flex-col h-screen relative" :style="{ paddingTop: `${headerHeight}px` }">
     <!-- Original book view -->
     <div v-if="loading" class="flex-grow flex items-center justify-center">
       <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -96,7 +96,7 @@
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import { API_ENDPOINT } from '@/config';
 import io from 'socket.io-client';
 
@@ -107,6 +107,10 @@ export default {
     book: {
       type: Object,
       required: true
+    },
+    headerHeight: {
+      type: Number,
+      default: 64 // Default header height
     }
   },
   setup(props) {
@@ -135,6 +139,14 @@ export default {
     const touchStartX = ref(0);
     const touchEndX = ref(0);
     // const db_bookTitle = ref(null);
+
+    const epubViewerHeight = computed(() => {
+      return `calc(100vh - ${props.headerHeight}px - 50px)`; // 50px for footer, adjust if needed
+    });
+
+    const mobileEpubViewerHeight = computed(() => {
+      return `calc(100vh - ${props.headerHeight}px - 90px)`; // 90px for mobile footer, adjust if needed
+    });
 
     const handleTouchStart = (e) => {
       touchStartX.value = e.changedTouches[0].screenX;
@@ -718,7 +730,10 @@ export default {
       progress,
       summaryType,
       generatePlaceholderSummaries,
-      epubViewerRef
+      epubViewerRef,
+      epubViewerHeight,
+      mobileEpubViewerHeight,
+      // headerHeight: props.headerHeight
     };
   }
 }
@@ -734,7 +749,7 @@ export default {
 #epub-viewer {
   flex-grow: 1;
   overflow: hidden;
-  height: calc(100vh - 50px); /* Adjust based on your footer height for desktop */
+  height: v-bind(epubViewerHeight);
 }
 
 footer {
@@ -742,13 +757,8 @@ footer {
 }
 
 @media (max-width: 640px) {
-  .reading-area {
-    height: calc(100% - 10px); /* Slight reduction to prevent overflow */
-  }
-
   #epub-viewer {
-    height: calc(100vh - 90px); /* Adjust based on your footer height for mobile */
+    height: v-bind(mobileEpubViewerHeight);
   }
 }
-
 </style>
