@@ -7,7 +7,7 @@
     <div v-else-if="error" class="flex-grow flex items-center justify-center text-red-500 px-4 text-center text-sm">
       {{ error }}
     </div>
-    <div v-else ref="epubViewerRef" id="epub-viewer" class="flex-grow"></div>
+    <div ref="epubViewerRef" id="epub-viewer" class="flex-grow"></div>
     
     <footer class="bg-gray-100 shadow-md">
       <div class="max-w-4xl mx-auto px-2 py-1 flex justify-between items-center">
@@ -576,12 +576,8 @@ export default {
           spread: 'always'
         });
 
-        rendition.value.display();
-        applyAdaptiveDifficulty();
+        await rendition.value.display();
 
-        // await rendition.value.display();
-
-        // Setup key listeners
         rendition.value.on('keyup', handleKeyPress);
         rendition.value.themes.fontSize(`${fontSize.value}px`);
 
@@ -592,11 +588,28 @@ export default {
         }
 
         loading.value = false;
+        console.log('Book loaded successfully');
+        return true;
+
         } catch (err) {
         console.error('Error loading book:', err);
         error.value = 'Failed to load the book. Please try again.';
         loading.value = false;
         }
+    };
+
+    const initializeEpubViewer = async () => {
+      const success = await loadBook();
+      if (success) {
+        console.log('Before addTouchListeners:', checkEpubViewer());
+        addTouchListeners();
+      }
+    };
+
+    const checkEpubViewer = () => {
+      const epubViewerElement = document.getElementById('epub-viewer');
+      console.log('Checking epub viewer:', epubViewerElement ? 'Found' : 'Not found');
+      return epubViewerElement;
     };
 
     const prevPage = () => {
@@ -663,15 +676,22 @@ export default {
       }
     };
 
+    const addTouchListeners = () => {
+      setTimeout(() => {
+        const epubViewerElement = document.getElementById('epub-viewer');
+        if (epubViewerElement) {
+          console.log('Adding touch event listeners');
+          epubViewerElement.addEventListener('touchstart', handleTouchStart, false);
+          epubViewerElement.addEventListener('touchend', handleTouchEnd, false);
+        } else {
+          console.error('epub-viewer element not found');
+        }
+      }, 100); // Small delay to ensure DOM update
+    };
+
     onMounted(() => {
-      loadBook();
+      initializeEpubViewer();
       window.addEventListener('resize', adjustViewerHeight);
-      
-      // Add touch event listeners
-      if (epubViewerRef.value) {
-        epubViewerRef.value.addEventListener('touchstart', handleTouchStart, false);
-        epubViewerRef.value.addEventListener('touchend', handleTouchEnd, false);
-      }
     });
 
     onUnmounted(() => {
@@ -689,6 +709,8 @@ export default {
     });
 
     watch(() => props.book, loadBook);
+    watch(() => props.book, initializeEpubViewer);
+
 
         // Watch for changes in the current chapter
     watch(() => props.book.currentChapter, (newChapter) => {
