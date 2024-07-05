@@ -746,7 +746,7 @@ footer {
   }
   
   #epub-viewer {
-    height: calc(100vh - 200px); /* Adjust based on your new footer height */
+    height: calc(100vh - 40px); /* Adjust based on your new footer height */
   }
 }
 
