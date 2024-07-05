@@ -1,14 +1,14 @@
 <template>
-  <div class="min-h-screen bg-gray-100 flex flex-col">
-    <header class="bg-white shadow-md text-gray-800 py-4 px-6 flex justify-between items-center">
+  <div class="min-h-screen bg-gray-100 flex flex-col pt-16">
+    <header class="fixed top-0 left-0 right-0 bg-white shadow-md text-gray-800 py-4 px-6 flex justify-between items-center z-10">
       <button @click="gotoHomePage" class="home-button focus:outline-none focus:ring-2 focus:ring-blue-300 rounded-full p-2 transition duration-300 ease-in-out transform hover:scale-110">
         <img src="@/assets/home.png" alt="Home" class="w-6 h-6 sm:w-8 sm:h-8"/>
       </button>
-      <h1 class="font-bold text-xl sm:text-3xl text-blue-600">Little AI-Assisted EPUB Reader</h1>
+      <h1 class="font-bold text-xl sm:text-3xl text-blue-600">Little AI-Assisted Reader</h1>
       <div class="w-6 sm:w-8"></div> <!-- Placeholder for alignment -->
     </header>
 
-    <main class="container mx-auto px-4 py-8 flex-grow">
+    <main class="container mx-auto px-4 pt-20 pb-8 flex-grow">
       <template v-if="!selectedBook">
         <div v-if="isBookLoading" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div class="bg-white p-4 sm:p-8 rounded-lg shadow-xl text-center">
