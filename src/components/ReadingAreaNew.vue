@@ -276,65 +276,7 @@ export default {
 
       setupSocketListeners();
     };
-    // const connectSocket = () => {
-    //   socket.value = io(API_ENDPOINT, {
-    //     transports: ['websocket', 'polling'], // Try both WebSocket and long-polling
-    //     reconnection: true,
-    //     reconnectionAttempts: Infinity,
-    //     reconnectionDelay: 1000,
-    //     reconnectionDelayMax: 5000,
-    //     timeout: 20000,
-    //     forceNew: true
-    //   });
-      
-    //   socket.value.on('connect', () => {
-    //     console.log('Socket connected');
-    //     console.log('the book title', bookTitle.value)
-    //   });
-      
-    //   socket.value.on('progress_update', (data) => {
-    //     progress.value = data.progress;
-    //   });
 
-    //   socket.value.on('processing_complete', (data) => {
-    //     console.log('Processing complete event received:', data);
-    //     if (data.book_name === props.book.name) {
-    //       console.log('Processing complete for current book');
-    //       isProcessing.value = false;
-    //       getBookSummary();
-    //       getChapterSummaries();
-    //     }
-    //   });
-
-    //   socket.value.on('disconnect', (reason) => {
-    //     console.log('Socket disconnected', reason);
-    //   });
-    // };
-
-    // socket.value.on('connect_error', (error) => {
-    //   console.log('Connection Error:', error);
-    // });
-
-    // socket.value.on('disconnect', (reason) => {
-    //   console.log('Disconnected:', reason);
-    //   if (reason === 'io server disconnect') {
-    //     // the disconnection was initiated by the server, you need to reconnect manually
-    //     socket.value.connect();
-    //   }
-    //   // else the socket will automatically try to reconnect
-    // });
-
-    // socket.value.on('reconnect_attempt', (attemptNumber) => {
-    //   console.log('Attempting reconnection:', attemptNumber);
-    // });
-
-    // socket.value.on('reconnect_error', (error) => {
-    //   console.error('Reconnection error:', error);
-    // });
-
-    // socket.value.on('reconnect_failed', () => {
-    //   console.error('Failed to reconnect');
-    // });
 
     const disconnectSocket = () => {
       if (socket.value) {
@@ -423,9 +365,6 @@ export default {
         // const chapterUri = chapterHref.split('/').pop(); // Get the filename from the href
         const chapterIdentifier = `${bookName}_Chapter_${chapterHref}`;
         
-        // Encode the entire chapter identifier
-        // console.log(' Chapter Identifier:', chapterIdentifier);
-        // const encodedChapterIdentifier = encodeURIComponent(chapterIdentifier);
         return chapterIdentifier;
       } catch (error) {
         console.error('Error generating chapter identifier:', error);
@@ -559,19 +498,6 @@ export default {
       }
     };
 
-    // const toggleSummaryOverlay = async () => {
-    //   adaptiveModeEnabled.value = !adaptiveModeEnabled.value;
-    //   showSummaryOverlay.value = !showSummaryOverlay.value;
-    //   if (showSummaryOverlay.value) {
-    //     await processEpub();
-    //   }
-    //   if (adaptiveModeEnabled.value) {
-    //     await applyAdaptiveDifficulty();
-    //   } else {
-    //     await resetTextDifficulty();
-    //   }    
-    // };
-
     const toggleSummaryOverlay = async () => {
       if (!showSummaryOverlay.value) {
         showSummaryOverlay.value = true;
@@ -631,9 +557,6 @@ export default {
 
         rendition.value.on('touchstart', handleTouchStart);
         rendition.value.on('touchend', handleTouchEnd);
-        // rendition.value.on('touchmove', (e) => {
-        //   console.log('Touch move event', e);
-        // });
 
         rendition.value.on('keyup', handleKeyPress);
         rendition.value.themes.fontSize(`${fontSize.value}px`);
@@ -742,22 +665,6 @@ export default {
         currentSummaryContent.value = summarizedContent.value[currentSummaryPage.value];
       }
     };
-
-    // const addTouchListeners = () => {
-    //   const epubViewerElement = document.getElementById('epub-viewer');
-    //   if (epubViewerElement) {
-    //     console.log('Adding touch event listeners');
-    //     epubViewerElement.addEventListener('touchstart', handleTouchStart, { passive: true });
-    //     epubViewerElement.addEventListener('touchend', handleTouchEnd, { passive: true });
-        
-    //     // Add logging to check if events are firing
-    //     epubViewerElement.addEventListener('touchmove', (e) => {
-    //       console.log('Touch move event', e);
-    //     }, { passive: true });
-    //   } else {
-    //     console.error('epub-viewer element not found');
-    //   }
-    // };
 
     const addTouchListeners = () => {
       console.log('Adding touch event listeners to window');
