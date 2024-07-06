@@ -249,6 +249,17 @@ export default {
         }
       });
 
+      socket.value.on('summaries_complete', (data) => {
+        console.log('Summaries complete event received:', data);
+        console.log('the props book name', props.book.name);
+        if (data.book_name === props.book.name) {
+          console.log('Summaries complete for current book');
+          isProcessing.value = false;
+          // getBookSummary();
+          // getAllSummaries();
+        }
+      });
+
       socket.value.on('disconnect', () => {
         console.log('Socket disconnected');
       });
@@ -501,8 +512,10 @@ export default {
     const toggleSummaryOverlay = async () => {
       if (!showSummaryOverlay.value) {
         showSummaryOverlay.value = true;
-        connectSocket();
-        await processEpub();
+        connectSocket(); // This is now called in loadBook
+        await processEpub(); // This is now called in loadBook
+        // getBookSummary();
+        // getAllSummaries();
       } else {
         disconnectSocket();
         showSummaryOverlay.value = false;
@@ -545,7 +558,6 @@ export default {
 
       try {
         book.value = new window.ePub(props.book.epub);
-        // adjustViewerHeight();
         rendition.value = book.value.renderTo('epub-viewer', {
           width: '100%',
           height: '100%',
@@ -569,13 +581,18 @@ export default {
 
         loading.value = false;
         console.log('Book loaded successfully');
+
+        // Call processEpub here after the book is loaded
+        // connectSocket();
+        await processEpub();
+
         return true;
 
-        } catch (err) {
+      } catch (err) {
         console.error('Error loading book:', err);
         error.value = 'Failed to load the book. Please try again.';
         loading.value = false;
-        }
+      }
     };
 
     const initializeEpubViewer = async () => {
@@ -706,9 +723,9 @@ export default {
     watch(isProcessing, (newValue) => {
       if (!newValue) {
         // Processing is complete, update the UI
-        getBookSummary();
-        // getChapterSummaries();
-        getAllSummaries();
+        // getBookSummary();
+        // // getChapterSummaries();
+        // getAllSummaries();
       }
     });
 
