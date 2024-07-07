@@ -385,23 +385,30 @@ export default {
       }
     };
 
-      const getAllSummaries = async () => {
-        if (!book.value) {
-          console.error("Book not loaded");
-          return;
-        }
-        console.log('in all summaries');
-        const chapters = book.value.spine.spineItems;
-        // const chapterIds = chapters.map(chapter => generateChapterIdentifier(chapter.href));
-        const bookName = props.book.name || "Unknown Book";
+    const getAllSummaries = async () => {
+      if (!book.value) {
+        console.error("Book not loaded");
+        return;
+      }
+      console.log('in all summaries');
+      const chapters = book.value.spine.spineItems;
+      const bookName = props.book.name || "Unknown Book";
 
-        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+      const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-        const fetchChapterSummary = async (chapterId) => {
+      // Initialize chapterSummaries.value with pending placeholders
+      chapterSummaries.value = chapters.map((_, index) => ({
+        title: `Chapter ${index + 1}`,
+        content: "Fetching summary...",
+        isFetching: true
+      }));
+
+      const fetchChapterSummary = async (chapterId, index) => {
         const cachedSummary = getCachedChapterSummary(bookName, chapterId);
         if (cachedSummary) {
           console.log(`Retrieved summary for chapter ${chapterId} from cache`);
-          return cachedSummary;
+          updateChapterSummary(index, cachedSummary);
+          return;
         }
 
         console.log(`Fetching summary for chapter ${chapterId} from server`);
@@ -422,34 +429,37 @@ export default {
           if (data.status === 'success') {
             const summary = data.chapter_summary.summary;
             cacheChapterSummary(bookName, chapterId, summary);
-            return summary;
+            updateChapterSummary(index, summary);
           } else if (data.status === 'pending') {
-            return "Summary is pending for this chapter.";
+            updateChapterSummary(index, "Summary is pending for this chapter.");
           } else {
             throw new Error('Failed to fetch summary');
           }
         } catch (error) {
           console.error(`Error fetching summary for chapter ${chapterId}:`, error);
-          return "An error occurred while fetching the chapter summary.";
+          updateChapterSummary(index, "An error occurred while fetching the chapter summary.");
         }
       };
-      const summaries = [];
+
+      const updateChapterSummary = (index, content) => {
+        chapterSummaries.value[index] = {
+          ...chapterSummaries.value[index],
+          content: content,
+          isFetching: false
+        };
+      };
+
       for (let i = 0; i < chapters.length; i++) {
         const chapter = chapters[i];
         const chapterId = generateChapterIdentifier(chapter.href);
-        const summary = await fetchChapterSummary(chapterId);
-        summaries.push({
-          title: `Chapter ${i + 1}`,
-          content: summary
-        });
+        fetchChapterSummary(chapterId, i);
 
         if (i < chapters.length - 1) {
-          await delay(500); // 1 second delay between requests
+          await delay(500); // 0.5 second delay between requests
         }
       }
 
-      chapterSummaries.value = summaries;
-      console.log('All chapter summaries fetched and cached');
+      console.log('All chapter summary fetches initiated');
     };
 
     // const getChapterSummaries = async () => {
