@@ -99,6 +99,8 @@
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import { API_ENDPOINT } from '@/config';
 import io from 'socket.io-client';
+import { getCachedBookSummary, cacheBookSummary, cacheChapterSummaries, getCachedChapterSummaries } from '@/utils/cacheUtils.js';
+
 
 
 export default {
@@ -243,9 +245,10 @@ export default {
         console.log('the props book name', props.book.name);
         if (data.book_name === props.book.name) {
           console.log('Processing complete for current book');
-          isProcessing.value = false;
           getBookSummary();
           getAllSummaries();
+          isProcessing.value = false;
+
         }
       });
 
@@ -388,10 +391,20 @@ export default {
         console.error("Book not loaded");
         return;
       }
-      console.log('in all summaries')
+      console.log('in all summaries');
       const chapters = book.value.spine.spineItems;
       const chapterIds = chapters.map(chapter => generateChapterIdentifier(chapter.href));
       const bookName = props.book.name || "Unknown Book";
+
+      // Try to get cached summaries first
+      const cachedSummaries = getCachedChapterSummaries(bookName);
+      if (cachedSummaries) {
+        console.log('Retrieved chapter summaries from cache');
+        chapterSummaries.value = cachedSummaries;
+        return;
+      }
+
+      console.log('No cached chapter summaries found, fetching from server');
 
       try {
         const response = await fetch(`${API_ENDPOINT}/all-summaries`, {
@@ -432,6 +445,10 @@ export default {
               content: content
             };
           });
+
+          // Cache the fetched summaries
+          cacheChapterSummaries(bookName, chapterSummaries.value);
+          console.log('Chapter summaries fetched and cached');
         } else {
           throw new Error('Failed to fetch summaries');
         }
@@ -512,10 +529,12 @@ export default {
     const toggleSummaryOverlay = async () => {
       if (!showSummaryOverlay.value) {
         showSummaryOverlay.value = true;
-        connectSocket(); // This is now called in loadBook
-        await processEpub(); // This is now called in loadBook
+        // connectSocket(); // This is now called in loadBook
+        // // await processEpub(); // This is now called in loadBook
         // getBookSummary();
         // getAllSummaries();
+        // showSummaryOverlay.value = true;
+
       } else {
         disconnectSocket();
         showSummaryOverlay.value = false;
@@ -583,8 +602,11 @@ export default {
         console.log('Book loaded successfully');
 
         // Call processEpub here after the book is loaded
-        // connectSocket();
+        connectSocket();
         await processEpub();
+
+        // getBookSummary();
+        // getAllSummaries();
 
         return true;
 
@@ -642,32 +664,45 @@ export default {
       }
     };
 
-    const getBookSummary = async () => {
-      if (!book.value) {
-        console.error("Book not loaded");
-        return;
-      }
 
-      try {
-        // Wait for the metadata to load
-        // const metadata = await book.value.loaded.metadata;
-        const encodedBookTitle = encodeURIComponent(props.book.name);
-
-        // Fetch the book summary
-        const response = await fetch(`${API_ENDPOINT}/book-summary/${encodedBookTitle}`);
-        
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
+      const getBookSummary = async () => {
+        if (!book.value) {
+          console.error("Book not loaded");
+          return;
         }
-        
-        const data = await response.json();
-        bookSummary.value = data.book_summary;
-      } catch (error) {
-        console.error("Error fetching book summary:", error);
-        bookSummary.value = "Failed to load book summary.";
-      }
-    };
+        const cachedBookSummary = getCachedBookSummary(props.book.name);
+        if (cachedBookSummary) {
+          bookSummary.value = cachedBookSummary;
+          console.log('Retrieved book summary from cache');
+          return; // Exit the function early if we have a cached summary
+        }
 
+        console.log('No cached book summary found');
+        // Proceed to fetch book summary from the server
+
+        try {
+          const encodedBookTitle = encodeURIComponent(props.book.name);
+
+          // Fetch the book summary
+          const response = await fetch(`${API_ENDPOINT}/book-summary/${encodedBookTitle}`);
+          
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          
+          const data = await response.json();
+          if (data.status === 'success' && data.book_summary) {
+            bookSummary.value = data.book_summary;
+            cacheBookSummary(props.book.name, data.book_summary);
+            console.log('Book summary fetched and cached');
+          } else {
+            throw new Error('Invalid response format or missing book summary');
+          }
+        } catch (error) {
+          console.error("Error fetching book summary:", error);
+          bookSummary.value = "Failed to load book summary.";
+        }
+      };
 
     const nextSummaryPage = () => {
       if (currentSummaryPage.value < summarizedContent.value.length - 1) {
