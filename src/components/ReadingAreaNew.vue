@@ -99,7 +99,7 @@
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import { API_ENDPOINT } from '@/config';
 import io from 'socket.io-client';
-import { getCachedBookSummary, cacheBookSummary, cacheChapterSummaries, getCachedChapterSummaries } from '@/utils/cacheUtils.js';
+import { clearAllCache, getCachedBookSummary, cacheBookSummary, cacheChapterSummary, getCachedChapterSummary } from '@/utils/cacheUtils.js';
 
 
 
@@ -386,80 +386,71 @@ export default {
       }
     };
 
-    const getAllSummaries = async () => {
-      if (!book.value) {
-        console.error("Book not loaded");
-        return;
-      }
-      console.log('in all summaries');
-      const chapters = book.value.spine.spineItems;
-      const chapterIds = chapters.map(chapter => generateChapterIdentifier(chapter.href));
-      const bookName = props.book.name || "Unknown Book";
+      const getAllSummaries = async () => {
+        if (!book.value) {
+          console.error("Book not loaded");
+          return;
+        }
+        console.log('in all summaries');
+        const chapters = book.value.spine.spineItems;
+        // const chapterIds = chapters.map(chapter => generateChapterIdentifier(chapter.href));
+        const bookName = props.book.name || "Unknown Book";
 
-      // Try to get cached summaries first
-      const cachedSummaries = getCachedChapterSummaries(bookName);
-      if (cachedSummaries) {
-        console.log('Retrieved chapter summaries from cache');
-        chapterSummaries.value = cachedSummaries;
-        return;
-      }
+        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-      console.log('No cached chapter summaries found, fetching from server');
-
-      try {
-        const response = await fetch(`${API_ENDPOINT}/all-summaries`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            bookName: bookName,
-            chapterIds: chapterIds
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
+        const fetchChapterSummary = async (chapterId) => {
+        const cachedSummary = getCachedChapterSummary(bookName, chapterId);
+        if (cachedSummary) {
+          console.log(`Retrieved summary for chapter ${chapterId} from cache`);
+          return cachedSummary;
         }
 
-        const data = await response.json();
-
-        if (data.status === 'success') {
-          chapterSummaries.value = chapters.map((chapter, index) => {
-            const chapterId = generateChapterIdentifier(chapter.href);
-            const summaryData = data.summaries[chapterId];
-            
-            let content;
-            if (summaryData && summaryData.status === 'success') {
-              content = summaryData.chapter_summary.summary;
-              // if (summaryData.chapter_summary.is_main_content) {
-              //   content = summaryData.chapter_summary.summary;
-              // } else {
-              //   content = "This is not relevant information";
-              // }
-            } else {
-              content = "Summary is pending for this chapter.";
-            }
-
-            return {
-              title: `Chapter ${index + 1}`,
-              content: content
-            };
+        console.log(`Fetching summary for chapter ${chapterId} from server`);
+        try {
+          const response = await fetch(`${API_ENDPOINT}/chapter-summary/${encodeURIComponent(chapterId)}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
           });
 
-          // Cache the fetched summaries
-          cacheChapterSummaries(bookName, chapterSummaries.value);
-          console.log('Chapter summaries fetched and cached');
-        } else {
-          throw new Error('Failed to fetch summaries');
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+
+          const data = await response.json();
+
+          if (data.status === 'success') {
+            const summary = data.chapter_summary.summary;
+            cacheChapterSummary(bookName, chapterId, summary);
+            return summary;
+          } else if (data.status === 'pending') {
+            return "Summary is pending for this chapter.";
+          } else {
+            throw new Error('Failed to fetch summary');
+          }
+        } catch (error) {
+          console.error(`Error fetching summary for chapter ${chapterId}:`, error);
+          return "An error occurred while fetching the chapter summary.";
         }
-      } catch (error) {
-        console.error("Error fetching chapter summaries:", error);
-        chapterSummaries.value = chapters.map((_, index) => ({
-          title: `Chapter ${index + 1}`,
-          content: "An error occurred while fetching the chapter summary."
-        }));
+      };
+      const summaries = [];
+      for (let i = 0; i < chapters.length; i++) {
+        const chapter = chapters[i];
+        const chapterId = generateChapterIdentifier(chapter.href);
+        const summary = await fetchChapterSummary(chapterId);
+        summaries.push({
+          title: `Chapter ${i + 1}`,
+          content: summary
+        });
+
+        if (i < chapters.length - 1) {
+          await delay(500); // 1 second delay between requests
+        }
       }
+
+      chapterSummaries.value = summaries;
+      console.log('All chapter summaries fetched and cached');
     };
 
     // const getChapterSummaries = async () => {
@@ -730,6 +721,8 @@ export default {
     };
 
     onMounted(() => {
+      clearAllCache();
+      console.log('cleared all local cache');
       initializeEpubViewer();
       window.addEventListener('resize', adjustViewerHeight);
     });
