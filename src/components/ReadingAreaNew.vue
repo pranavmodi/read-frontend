@@ -100,7 +100,7 @@ import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import { API_ENDPOINT } from '@/config';
 import io from 'socket.io-client';
 // import { clearAllCache, getCachedBookSummary, cacheBookSummary, cacheChapterSummary, getCachedChapterSummary } from '@/utils/cacheUtils.js';
-import { getCachedBookSummary, cacheBookSummary, cacheChapterSummary, getCachedChapterSummary } from '@/utils/cacheUtils.js';
+import { getCachedBookSummary, getCachedAllChapterSummaries, cacheBookSummary, cacheChapterSummary, getCachedChapterSummary } from '@/utils/cacheUtils.js';
 
 export default {
   name: 'ReadingAreaNew',
@@ -567,6 +567,7 @@ export default {
       }
     };
 
+
     const loadBook = async () => {
       console.log('in loadbook');
       if (book.value) {
@@ -602,14 +603,23 @@ export default {
         loading.value = false;
         console.log('Book loaded successfully');
 
-        // Call processEpub here after the book is loaded
-        connectSocket();
-        await processEpub();
+        // Check local cache for book summary and chapter summaries
+        const bookName = props.book.name || "Unknown Book";
+        const cachedBookSummary = getCachedBookSummary(bookName);
+        const chapters = book.value.spine.spineItems;
+        const chapterIds = chapters.map(chapter => generateChapterIdentifier(chapter.href));
+        const cachedChapterSummaries = getCachedAllChapterSummaries(bookName, chapterIds);
 
-        // getBookSummary();
-        // getAllSummaries();
-        // isProcessing.value = false;
-        // disconnectSocket();
+        if (cachedBookSummary && cachedChapterSummaries && Object.keys(cachedChapterSummaries).length === chapterIds.length) {
+          console.log('Retrieved all summaries from cache');
+          bookSummary.value = cachedBookSummary;
+          chapterSummaries.value = cachedChapterSummaries;
+        } else {
+          console.log('Some or all summaries not found in cache, processing epub');
+          connectSocket();
+          await processEpub();
+        }
+
         return true;
 
       } catch (err) {
