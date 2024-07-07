@@ -431,11 +431,12 @@ export default {
             
             let content;
             if (summaryData && summaryData.status === 'success') {
-              if (summaryData.chapter_summary.is_main_content) {
-                content = summaryData.chapter_summary.summary;
-              } else {
-                content = "This is not relevant information";
-              }
+              content = summaryData.chapter_summary.summary;
+              // if (summaryData.chapter_summary.is_main_content) {
+              //   content = summaryData.chapter_summary.summary;
+              // } else {
+              //   content = "This is not relevant information";
+              // }
             } else {
               content = "Summary is pending for this chapter.";
             }
@@ -529,7 +530,7 @@ export default {
     const toggleSummaryOverlay = async () => {
       if (!showSummaryOverlay.value) {
         showSummaryOverlay.value = true;
-        // connectSocket(); // This is now called in loadBook
+        connectSocket(); // This is now called in loadBook
         // // await processEpub(); // This is now called in loadBook
         // getBookSummary();
         // getAllSummaries();
@@ -607,7 +608,8 @@ export default {
 
         // getBookSummary();
         // getAllSummaries();
-
+        // isProcessing.value = false;
+        // disconnectSocket();
         return true;
 
       } catch (err) {
