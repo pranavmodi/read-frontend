@@ -594,7 +594,7 @@ export default {
         book.value = new window.ePub(props.book.epub);
         rendition.value = book.value.renderTo('epub-viewer', {
           width: '100%',
-          height: '50%',
+          height: '75%',
           spread: 'always',
           allowScriptedContent: true
         });
