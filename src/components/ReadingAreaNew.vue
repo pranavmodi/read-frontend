@@ -58,7 +58,7 @@
           <p>{{ bookSummary }}</p>
         </div>
         <div v-else>
-          <div v-for="(chapter, index) in chapterSummaries" :key="index" class="mb-4">
+          <div v-for="(chapter, index) in Object.values(chapterSummaries)" :key="index" class="mb-4">
             <h3 class="text-lg sm:text-xl font-semibold">{{ chapter.title }}</h3>
             <p class="text-sm sm:text-base">{{ chapter.content }}</p>
           </div>
@@ -545,8 +545,8 @@ export default {
         showSummaryOverlay.value = true;
         connectSocket(); // This is now called in loadBook
         // // await processEpub(); // This is now called in loadBook
-        // getBookSummary();
-        // getAllSummaries();
+        getBookSummary();
+        getAllSummaries();
         // showSummaryOverlay.value = true;
 
       } else {
@@ -627,6 +627,7 @@ export default {
           console.log('Retrieved all summaries from cache');
           bookSummary.value = cachedBookSummary;
           chapterSummaries.value = cachedChapterSummaries;
+          console.log('the chapter summaries from cache ', chapterSummaries.value);
         } else {
           console.log('Some or all summaries not found in cache, processing epub');
           connectSocket();
@@ -862,7 +863,7 @@ export default {
 }
 
 .reading-area {
-  height: 100vh;
+  height: 80vh;
   overflow: hidden;
 }
 
