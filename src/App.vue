@@ -8,8 +8,9 @@
       <div class="w-6 sm:w-8"></div> <!-- Placeholder for alignment -->
     </header>
 
-    <main class="container mx-auto px-4 pb-8 flex-grow content-top-padding">
-      <template v-if="!selectedBook">
+    <main class="container mx-auto px-4 pb-8 flex-grow pt-24 sm:pt-28 content-top-padding">
+
+    <template v-if="!selectedBook">
         <div v-if="isBookLoading" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div class="bg-white p-4 sm:p-8 rounded-lg shadow-xl text-center">
             <h3 class="text-lg sm:text-xl font-bold mb-4">Loading Book</h3>
@@ -20,6 +21,7 @@
           </div>
         </div>
         <h2 class="text-2xl sm:text-4xl font-bold mb-4 sm:mb-8 text-gray-800 text-center">Book Library</h2>
+
         <!-- Loading and error states (unchanged) -->
         <div v-if="!loading && !error" class="grid-container overflow-auto w-full max-w-7xl mx-auto">
           <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-6">
