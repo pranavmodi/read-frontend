@@ -7,9 +7,11 @@
     <div v-else-if="error" class="flex-grow flex items-center justify-center text-red-500 px-4 text-center text-sm">
       {{ error }}
     </div>
-    <div ref="epubViewerRef" id="epub-viewer" class="flex-grow"></div>
+    <!-- <div ref="epubViewerRef" id="epub-viewer" class="flex-grow"></div> -->
+    <div ref="epubViewerRef" id="epub-viewer"></div>
+
     
-    <footer class="bg-gray-100 shadow-md">
+    <!-- <footer class="bg-gray-100 shadow-md">
       <div class="max-w-4xl mx-auto px-2 py-1 flex justify-between items-center">
         <button @click="prevPage" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-2 rounded-full text-xs transition duration-300 ease-in-out transform hover:scale-105">
           &#8592;
@@ -26,7 +28,7 @@
           &#8594;
         </button>
       </div>
-    </footer>
+    </footer> -->
 
     <!-- Summary Overlay -->
     <div v-if="showSummaryOverlay" class="absolute inset-0 bg-white z-10 flex flex-col overflow-hidden">

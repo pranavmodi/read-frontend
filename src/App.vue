@@ -46,14 +46,12 @@
         />
     </main>
 
-    <footer class="fixed bottom-0 left-0 right-0 bg-white shadow-md py-4 px-6 footer-height">
+    <footer v-if="!selectedBook" class="fixed bottom-0 left-0 right-0 bg-white shadow-md py-4 px-6 footer-height">
       <div class="container mx-auto flex justify-center">
-        <template v-if="!selectedBook">
-          <input type="file" ref="fileInput" @change="onFileUpload" accept=".epub" class="hidden" :disabled="uploading" />
-          <button @click="openFileSelector" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded cursor-pointer transition duration-300 ease-in-out transform hover:scale-105 text-sm sm:text-base" :class="{ 'opacity-50 cursor-not-allowed': uploading }">
-            {{ uploading ? 'Uploading...' : 'Upload Book' }}
-          </button>
-        </template>
+        <input type="file" ref="fileInput" @change="onFileUpload" accept=".epub" class="hidden" :disabled="uploading" />
+        <button @click="openFileSelector" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded cursor-pointer transition duration-300 ease-in-out transform hover:scale-105 text-sm sm:text-base" :class="{ 'opacity-50 cursor-not-allowed': uploading }">
+          {{ uploading ? 'Uploading...' : 'Upload Book' }}
+        </button>
       </div>
     </footer>
   </div>
