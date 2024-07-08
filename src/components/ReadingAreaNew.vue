@@ -1,20 +1,20 @@
 <template>
-  <div class="reading-area flex flex-col h-screen relative" :style="{ paddingTop: `${headerHeight}px` }">
+  <div class="reading-area relative" :style="{ paddingTop: `${headerHeight}px`, paddingBottom: `${footerHeight}px` }">
     <!-- Loading indicator -->
-    <div v-if="loading" class="flex-grow flex items-center justify-center">
+    <div v-if="loading" class="absolute inset-0 flex items-center justify-center">
       <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
     </div>
     
     <!-- Error message -->
-    <div v-else-if="error" class="flex-grow flex items-center justify-center text-red-500 px-4 text-center text-sm">
+    <div v-else-if="error" class="absolute inset-0 flex items-center justify-center text-red-500 px-4 text-center text-sm">
       {{ error }}
     </div>
     
     <!-- EPUB viewer -->
-    <div ref="epubViewerRef" id="epub-viewer" class="flex-grow overflow-hidden"></div>
+    <div ref="epubViewerRef" id="epub-viewer" :style="{ height: epubViewerHeight }"></div>
 
-    <!-- Summary Overlay -->
-    <div v-if="showSummaryOverlay" class="absolute inset-0 bg-white z-10 flex flex-col overflow-hidden">
+<!-- Summary Overlay -->
+<div v-if="showSummaryOverlay" class="absolute inset-0 bg-white z-10 flex flex-col overflow-hidden">
       <div v-if="isProcessing" class="flex-grow flex flex-col items-center justify-center p-4">
         <div class="w-64 bg-gray-200 rounded-full h-6 dark:bg-gray-700 mb-4">
           <div class="bg-blue-600 h-6 rounded-full" :style="{ width: `${progress}%` }"></div>
@@ -74,9 +74,29 @@
     </div>
 
     <!-- Toggle button for summary overlay -->
-    <button @click="toggleSummaryOverlay" class="fixed bottom-10 right-2 bg-blue-500 text-white p-1 rounded-full shadow-lg z-20">
+    <button @click="toggleSummaryOverlay" class="fixed bottom-20 right-2 bg-blue-500 text-white p-1 rounded-full shadow-lg z-20">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
     </button>
+
+    <!-- Fixed Footer -->
+    <footer class="fixed bottom-0 left-0 right-0 bg-gray-100 shadow-md z-10">
+      <div class="max-w-4xl mx-auto px-2 py-2 flex justify-between items-center">
+        <button @click="prevPage" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-2 rounded-full text-xs transition duration-300 ease-in-out transform hover:scale-105">
+          &#8592;
+        </button>
+        <div class="flex space-x-1">
+          <button @click="decreaseFontSize" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-2 rounded text-xs">
+            A-
+          </button>
+          <button @click="increaseFontSize" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-2 rounded text-xs">
+            A+
+          </button>
+        </div>
+        <button @click="nextPage" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-2 rounded-full text-xs transition duration-300 ease-in-out transform hover:scale-105">
+          &#8594;
+        </button>
+      </div>
+    </footer>
   </div>
 </template>
 
@@ -130,10 +150,17 @@ export default {
     const touchStartX = ref(0);
     const touchEndX = ref(0);
     const touchStartTime = ref(0);
+    const footerHeight = ref(50); // Adjust this value based on your footer's actual height
+    const windowHeight = ref(window.innerHeight);
     // const db_bookTitle = ref(null);
 
+    const epubViewerHeight = computed(() => {
+      return `${windowHeight.value - props.headerHeight - footerHeight.value}px`;
+    });
 
-    const epubViewerHeight = computed(() => props.contentHeight);
+    const updateWindowHeight = () => {
+      windowHeight.value = window.innerHeight;
+    };
 
 
     // const epubViewerHeight = computed(() => {
@@ -545,13 +572,13 @@ export default {
     };
     
 
-    const adjustViewerHeight = () => {
-      if (epubViewerRef.value) {
-        const viewportHeight = window.innerHeight;
-        const footerHeight = 64; // Approximate height of the footer
-        epubViewerRef.value.style.height = `${viewportHeight - footerHeight}px`;
-      }
-    };
+    // const adjustViewerHeight = () => {
+    //   if (epubViewerRef.value) {
+    //     const viewportHeight = window.innerHeight;
+    //     const footerHeight = 64; // Approximate height of the footer
+    //     epubViewerRef.value.style.height = `${viewportHeight - footerHeight}px`;
+    //   }
+    // };
 
 
     const loadBook = async () => {
@@ -729,7 +756,9 @@ export default {
       // clearAllCache();
       // console.log('cleared all local cache');
       initializeEpubViewer();
-      window.addEventListener('resize', adjustViewerHeight);
+      // window.addEventListener('resize', adjustViewerHeight);
+      window.addEventListener('resize', updateWindowHeight);
+
     });
 
     onUnmounted(() => {
@@ -741,7 +770,9 @@ export default {
         book.value.destroy();
       }
       document.removeEventListener('keyup', handleKeyPress);
-      window.removeEventListener('resize', adjustViewerHeight);
+      // window.removeEventListener('resize', adjustViewerHeight);
+      window.removeEventListener('resize', updateWindowHeight);
+
     });
 
     watch(() => props.book, loadBook);
@@ -797,8 +828,10 @@ export default {
       summaryType,
       generatePlaceholderSummaries,
       epubViewerRef,
-      epubViewerHeight,
+      // epubViewerHeight,
       mobileEpubViewerHeight,
+      footerHeight,
+      epubViewerHeight,
       // headerHeight: props.headerHeight
     };
   }
@@ -806,26 +839,40 @@ export default {
 </script>
 
 <style scoped>
-.reading-area {
+/* .reading-area {
   height: 100%;
   display: flex;
   flex-direction: column;
-}
+} */
 
-#epub-viewer {
+/* #epub-viewer {
   flex-grow: 1;
   overflow: hidden;
   transition: opacity 0.3s ease;
-}
+} */
 
-footer {
+/* footer {
   flex-shrink: 0;
-}
+} */
 
 @media (max-width: 640px) {
   #epub-viewer {
     transition: opacity 0.3s ease;
   }
+}
+
+.reading-area {
+  height: 100vh;
+  overflow: hidden;
+}
+
+#epub-viewer {
+  width: 100%;
+  overflow: hidden;
+}
+
+footer {
+  height: 50px; /* Make sure this matches the footerHeight ref value */
 }
 
 #epub-viewer::before {
@@ -845,3 +892,5 @@ footer {
   opacity: 1;
 }
 </style>
+
+
