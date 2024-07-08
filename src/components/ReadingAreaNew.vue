@@ -1,34 +1,17 @@
 <template>
   <div class="reading-area flex flex-col h-screen relative" :style="{ paddingTop: `${headerHeight}px` }">
-    <!-- Original book view -->
+    <!-- Loading indicator -->
     <div v-if="loading" class="flex-grow flex items-center justify-center">
       <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
     </div>
+    
+    <!-- Error message -->
     <div v-else-if="error" class="flex-grow flex items-center justify-center text-red-500 px-4 text-center text-sm">
       {{ error }}
     </div>
-    <!-- <div ref="epubViewerRef" id="epub-viewer" class="flex-grow"></div> -->
-    <div ref="epubViewerRef" id="epub-viewer"></div>
-
     
-    <!-- <footer class="bg-gray-100 shadow-md">
-      <div class="max-w-4xl mx-auto px-2 py-1 flex justify-between items-center">
-        <button @click="prevPage" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-2 rounded-full text-xs transition duration-300 ease-in-out transform hover:scale-105">
-          &#8592;
-        </button>
-        <div class="flex space-x-1">
-          <button @click="decreaseFontSize" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-2 rounded text-xs">
-            A-
-          </button>
-          <button @click="increaseFontSize" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-2 rounded text-xs">
-            A+
-          </button>
-        </div>
-        <button @click="nextPage" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-2 rounded-full text-xs transition duration-300 ease-in-out transform hover:scale-105">
-          &#8594;
-        </button>
-      </div>
-    </footer> -->
+    <!-- EPUB viewer -->
+    <div ref="epubViewerRef" id="epub-viewer" class="flex-grow overflow-hidden"></div>
 
     <!-- Summary Overlay -->
     <div v-if="showSummaryOverlay" class="absolute inset-0 bg-white z-10 flex flex-col overflow-hidden">
@@ -96,6 +79,7 @@
     </button>
   </div>
 </template>
+
 
 <script>
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
@@ -829,10 +813,9 @@ export default {
 }
 
 #epub-viewer {
-  height: v-bind(epubViewerHeight);
-  overflow-y: auto;
+  flex-grow: 1;
+  overflow: hidden;
   transition: opacity 0.3s ease;
-
 }
 
 footer {
@@ -841,10 +824,9 @@ footer {
 
 @media (max-width: 640px) {
   #epub-viewer {
-    height: v-bind(mobileEpubViewerHeight);
     transition: opacity 0.3s ease;
-
   }
+}
 
 #epub-viewer::before {
   content: '';
@@ -861,6 +843,5 @@ footer {
 
 #epub-viewer.tapped::before {
   opacity: 1;
-}
 }
 </style>
