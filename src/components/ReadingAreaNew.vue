@@ -13,64 +13,65 @@
     <!-- EPUB viewer -->
     <div ref="epubViewerRef" id="epub-viewer" :style="{ height: epubViewerHeight }"></div>
 
-<!-- Summary Overlay -->
-<div v-if="showSummaryOverlay" class="absolute inset-0 bg-white z-10 flex flex-col overflow-hidden">
-      <div v-if="isProcessing" class="flex-grow flex flex-col items-center justify-center p-4">
-        <div class="w-64 bg-gray-200 rounded-full h-6 dark:bg-gray-700 mb-4">
-          <div class="bg-blue-600 h-6 rounded-full" :style="{ width: `${progress}%` }"></div>
-        </div>
-        <p class="text-sm sm:text-base">Processing: {{ progress }}%</p>
-      </div>
-      <div v-else class="flex-grow overflow-y-auto p-4">
+    <!-- Summary Overlay -->
+    <div v-if="showSummaryOverlay" class="absolute inset-0 bg-white z-10 flex flex-col overflow-hidden">
+      <!-- Fixed Header -->
+      <header class="bg-gray-100 shadow-md p-4 flex items-center justify-between">
         <!-- Segmented Control -->
-        <div class="mb-4 sm:mb-6 flex justify-center">
-          <div class="inline-flex rounded-md shadow-sm" role="group">
-            <button 
-              @click="summaryType = 'book'" 
-              :class="[
-                'px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border transition-colors duration-200',
-                summaryType === 'book' 
-                  ? 'bg-blue-500 text-white border-blue-600' 
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-              ]"
-            >
-              Book Summary
-            </button>
-            <button 
-              @click="summaryType = 'chapters'" 
-              :class="[
-                'px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border transition-colors duration-200',
-                summaryType === 'chapters' 
-                  ? 'bg-blue-500 text-white border-blue-600' 
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-              ]"
-            >
-              Chapters
-            </button>
-          </div>
-        </div>
-
-        <!-- Content -->
-        <h2 class="text-xl sm:text-2xl font-bold mb-4 text-center">
-          {{ summaryType === 'book' ? 'Book Summary' : 'Chapter Summaries' }}
-        </h2>
-        <div v-if="summaryType === 'book'" class="text-sm sm:text-base">
-          <p>{{ bookSummary }}</p>
-        </div>
-        <div v-else>
-          <div v-for="(chapter, index) in Object.values(chapterSummaries)" :key="index" class="mb-4">
-            <h3 class="text-lg sm:text-xl font-semibold">{{ chapter.title }}</h3>
-            <p class="text-sm sm:text-base">{{ chapter.content }}</p>
-          </div>
-        </div>
-      </div>
-      <footer class="bg-gray-100 shadow-md">
-        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
-          <button @click="toggleSummaryOverlay" :disabled="isProcessing" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded text-sm sm:text-base disabled:opacity-50 transition-colors duration-200">
-            Close Summary
+        <div class="inline-flex rounded-md shadow-sm" role="group">
+          <button 
+            @click="summaryType = 'book'" 
+            :class="[
+              'px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border transition-colors duration-200',
+              summaryType === 'book' 
+                ? 'bg-blue-500 text-white border-blue-600' 
+                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+            ]"
+          >
+            Book Summary
+          </button>
+          <button 
+            @click="summaryType = 'chapters'" 
+            :class="[
+              'px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border transition-colors duration-200',
+              summaryType === 'chapters' 
+                ? 'bg-blue-500 text-white border-blue-600' 
+                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+            ]"
+          >
+            Chapters
           </button>
         </div>
-      </footer>
+        
+        <!-- Close Button -->
+        <button @click="toggleSummaryOverlay" :disabled="isProcessing" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded text-sm sm:text-base disabled:opacity-50 transition-colors duration-200">
+          Close Summary
+        </button>
+      </header>
+
+      <!-- Content Area -->
+      <div class="flex-grow overflow-y-auto p-4">
+        <div v-if="isProcessing" class="flex flex-col items-center justify-center h-full">
+          <div class="w-64 bg-gray-200 rounded-full h-6 dark:bg-gray-700 mb-4">
+            <div class="bg-blue-600 h-6 rounded-full" :style="{ width: `${progress}%` }"></div>
+          </div>
+          <p class="text-sm sm:text-base">Processing: {{ progress }}%</p>
+        </div>
+        <div v-else>
+          <h2 class="text-xl sm:text-2xl font-bold mb-4 text-center">
+            {{ summaryType === 'book' ? 'Book Summary' : 'Chapter Summaries' }}
+          </h2>
+          <div v-if="summaryType === 'book'" class="text-sm sm:text-base">
+            <p>{{ bookSummary }}</p>
+          </div>
+          <div v-else>
+            <div v-for="(chapter, index) in Object.values(chapterSummaries)" :key="index" class="mb-4">
+              <h3 class="text-lg sm:text-xl font-semibold">{{ chapter.title }}</h3>
+              <p class="text-sm sm:text-base">{{ chapter.content }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Toggle button for summary overlay -->
@@ -105,8 +106,8 @@
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import { API_ENDPOINT } from '@/config';
 import io from 'socket.io-client';
-// import { clearAllCache, getCachedBookSummary, cacheBookSummary, cacheChapterSummary, getCachedChapterSummary } from '@/utils/cacheUtils.js';
-import { getCachedBookSummary, getCachedAllChapterSummaries, cacheBookSummary, cacheChapterSummary, getCachedChapterSummary } from '@/utils/cacheUtils.js';
+// import { clearAllCache, getCachedAllChapterSummaries, getCachedBookSummary, cacheBookSummary, cacheChapterSummary, getCachedChapterSummary } from '@/utils/cacheUtils.js';
+import { getCachedBookSummary, cacheBookSummary, cacheChapterSummary, getCachedChapterSummary } from '@/utils/cacheUtils.js';
 
 export default {
   name: 'ReadingAreaNew',
@@ -260,20 +261,21 @@ export default {
           getBookSummary();
           getAllSummaries();
           isProcessing.value = false;
+          console.log("turned in processing false");
 
         }
       });
 
-      socket.value.on('summaries_complete', (data) => {
-        console.log('Summaries complete event received:', data);
-        console.log('the props book name', props.book.name);
-        if (data.book_name === props.book.name) {
-          console.log('Summaries complete for current book');
-          isProcessing.value = false;
-          // getBookSummary();
-          // getAllSummaries();
-        }
-      });
+      // socket.value.on('summaries_complete', (data) => {
+      //   console.log('Summaries complete event received:', data);
+      //   console.log('the props book name', props.book.name);
+      //   if (data.book_name === props.book.name) {
+      //     console.log('Summaries complete for current book');
+      //     isProcessing.value = false;
+      //     // getBookSummary();
+      //     // getAllSummaries();
+      //   }
+      // });
 
       socket.value.on('disconnect', () => {
         console.log('Socket disconnected');
@@ -335,7 +337,7 @@ export default {
         // The socket will handle progress updates and trigger getBookSummary and getChapterSummaries when done
       } catch (error) {
         console.error('Error processing ePub:', error);
-        isProcessing.value = false;
+        // isProcessing.value = false;
       }
     };
 
@@ -419,12 +421,12 @@ export default {
       const fetchChapterSummary = async (chapterId, index) => {
         const cachedSummary = getCachedChapterSummary(bookName, chapterId);
         if (cachedSummary) {
-          console.log(`Retrieved summary for chapter ${chapterId} from cache`);
+          // console.log(`Retrieved summary for chapter ${chapterId} from cache`);
           updateChapterSummary(index, cachedSummary);
           return;
         }
 
-        console.log(`Fetching summary for chapter ${chapterId} from server`);
+        // console.log(`Fetching summary for chapter ${chapterId} from server`);
         try {
           const response = await fetch(`${API_ENDPOINT}/chapter-summary/${encodeURIComponent(chapterId)}`, {
             method: 'GET',
@@ -543,10 +545,11 @@ export default {
     const toggleSummaryOverlay = async () => {
       if (!showSummaryOverlay.value) {
         showSummaryOverlay.value = true;
+        // isProcessing.value = true;
         connectSocket(); // This is now called in loadBook
         // // await processEpub(); // This is now called in loadBook
-        getBookSummary();
-        getAllSummaries();
+        // getBookSummary();
+        // getAllSummaries();
         // showSummaryOverlay.value = true;
 
       } else {
@@ -580,9 +583,8 @@ export default {
     //   }
     // };
 
-
     const loadBook = async () => {
-      console.log('in loadbook');
+      console.log('in loadbook', isProcessing.value);
       if (book.value) {
         book.value.destroy();
       }
@@ -616,22 +618,49 @@ export default {
         loading.value = false;
         console.log('Book loaded successfully');
 
-        // Check local cache for book summary and chapter summaries
+        // Check if summaries exist in cache
         const bookName = props.book.name || "Unknown Book";
         const cachedBookSummary = getCachedBookSummary(bookName);
-        const chapters = book.value.spine.spineItems;
-        const chapterIds = chapters.map(chapter => generateChapterIdentifier(chapter.href));
-        const cachedChapterSummaries = getCachedAllChapterSummaries(bookName, chapterIds);
-
-        if (cachedBookSummary && cachedChapterSummaries && Object.keys(cachedChapterSummaries).length === chapterIds.length) {
-          console.log('Retrieved all summaries from cache');
+        
+        if (cachedBookSummary) {
+          console.log('Retrieved book summary from cache');
           bookSummary.value = cachedBookSummary;
-          chapterSummaries.value = cachedChapterSummaries;
-          console.log('the chapter summaries from cache ', chapterSummaries.value);
-        } else {
+        }
+
+        // Initialize chapter summaries
+        const chapters = book.value.spine.spineItems;
+        chapterSummaries.value = chapters.map((_, index) => ({
+          title: `Chapter ${index + 1}`,
+          content: "Fetching summary...",
+          isFetching: true
+        }));
+
+        // Check for cached chapter summaries
+        let allCached = true;
+        for (let i = 0; i < chapters.length; i++) {
+          const chapterId = generateChapterIdentifier(chapters[i].href);
+          const cachedSummary = getCachedChapterSummary(bookName, chapterId);
+          if (cachedSummary) {
+            chapterSummaries.value[i] = {
+              title: `Chapter ${i + 1}`,
+              content: cachedSummary,
+              isFetching: false
+            };
+          } else {
+            allCached = false;
+            break;
+          }
+        }
+
+        if (!cachedBookSummary || !allCached) {
           console.log('Some or all summaries not found in cache, processing epub');
           connectSocket();
           await processEpub();
+          // After processing, fetch the summaries
+          await getBookSummary();
+          await getAllSummaries();
+        } else {
+          console.log('All summaries retrieved from cache');
         }
 
         return true;
@@ -646,16 +675,16 @@ export default {
     const initializeEpubViewer = async () => {
       const success = await loadBook();
       if (success) {
-        console.log('Before addTouchListeners:', checkEpubViewer());
+        // console.log('Before addTouchListeners:', checkEpubViewer());
         addTouchListeners();
       }
     };
 
-    const checkEpubViewer = () => {
-      const epubViewerElement = document.getElementById('epub-viewer');
-      console.log('Checking epub viewer:', epubViewerElement ? 'Found' : 'Not found');
-      return epubViewerElement;
-    };
+    // const checkEpubViewer = () => {
+    //   const epubViewerElement = document.getElementById('epub-viewer');
+    //   console.log('Checking epub viewer:', epubViewerElement ? 'Found' : 'Not found');
+    //   return epubViewerElement;
+    // };
 
     const prevPage = () => {
       if (rendition.value) {
