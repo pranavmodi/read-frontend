@@ -47,8 +47,12 @@
         :contentHeight="contentHeight"
         />
 
-        <ChatWindow v-if="showChat" :isOpen="showChat" @close="handleCloseChat" />
-
+      <ChatWindow 
+        v-if="showChat" 
+        :isOpen="showChat" 
+        :bookName="selectedBook ? selectedBook.name : ''"
+        @close="handleCloseChat" 
+      />
     </main>
 
     <footer v-if="!selectedBook" class="fixed bottom-0 left-0 right-0 bg-white shadow-md py-4 px-6 footer-height">

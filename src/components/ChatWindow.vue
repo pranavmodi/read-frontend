@@ -29,10 +29,14 @@
   
   <script>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
+import axios from 'axios';
+import { API_ENDPOINT } from '@/config'; // Make sure this points to your API endpoint
+
 
 export default {
   props: {
     isOpen: Boolean,
+    bookName: String, 
   },
   emits: ['close'],
   setup(props, { emit }) {
@@ -43,6 +47,8 @@ export default {
     const isDragging = ref(false);
     const offset = ref({ x: 0, y: 0 });
     const chatWindow = ref(null);
+    const isLoading = ref(false);
+
 
     const startDrag = (event) => {
       isDragging.value = true;
@@ -69,14 +75,26 @@ export default {
       document.removeEventListener('mouseup', stopDrag);
     };
 
-    const sendMessage = () => {
+    const sendMessage = async () => {
       if (userInput.value.trim()) {
-        messages.value.push({ sender: 'user', text: userInput.value });
-        // Simulate a response
-        setTimeout(() => {
-          messages.value.push({ sender: 'app', text: 'Thank you for your message. How can I assist you further?' });
-        }, 1000);
+        const userMessage = userInput.value;
+        messages.value.push({ sender: 'user', text: userMessage });
         userInput.value = '';
+        isLoading.value = true;
+
+        try {
+          const response = await axios.post(`${API_ENDPOINT}/chat_with_book`, {
+            query: userMessage,
+            book_name: props.bookName
+          });
+
+          messages.value.push({ sender: 'app', text: response.data.response });
+        } catch (error) {
+          console.error('Error sending message:', error);
+          messages.value.push({ sender: 'app', text: 'Sorry, there was an error processing your request.' });
+        } finally {
+          isLoading.value = false;
+        }
       }
     };
 
