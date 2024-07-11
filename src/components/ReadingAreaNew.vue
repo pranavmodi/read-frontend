@@ -107,7 +107,7 @@ import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import { API_ENDPOINT } from '@/config';
 import io from 'socket.io-client';
 // import { clearAllCache, getCachedAllChapterSummaries, getCachedBookSummary, cacheBookSummary, cacheChapterSummary, getCachedChapterSummary } from '@/utils/cacheUtils.js';
-import { getCachedBookSummary, cacheBookSummary, cacheChapterSummary, getCachedChapterSummary } from '@/utils/cacheUtils.js';
+import { clearAllCache, getCachedBookSummary, cacheBookSummary, cacheChapterSummary, getCachedChapterSummary } from '@/utils/cacheUtils.js';
 
 export default {
   name: 'ReadingAreaNew',
@@ -783,7 +783,7 @@ export default {
     };
 
     onMounted(() => {
-      // clearAllCache();
+      clearAllCache();
       // console.log('cleared all local cache');
       initializeEpubViewer();
       // window.addEventListener('resize', adjustViewerHeight);

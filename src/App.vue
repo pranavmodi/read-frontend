@@ -1,11 +1,13 @@
 <template>
   <div class="min-h-screen bg-gray-100 flex flex-col">
     <header class="fixed top-0 left-0 right-0 bg-white shadow-md text-gray-800 py-4 px-6 flex justify-between items-center z-10 header-height">
-     <button @click="gotoHomePage" class="home-button focus:outline-none focus:ring-2 focus:ring-blue-300 rounded-full p-2 transition duration-300 ease-in-out transform hover:scale-110">
+      <button @click="gotoHomePage" class="home-button focus:outline-none focus:ring-2 focus:ring-blue-300 rounded-full p-2 transition duration-300 ease-in-out transform hover:scale-110">
         <img src="@/assets/home.png" alt="Home" class="w-6 h-6 sm:w-8 sm:h-8"/>
       </button>
       <h1 class="font-bold text-xl sm:text-3xl text-blue-600">AI-Assisted Reader</h1>
-      <div class="w-6 sm:w-8"></div> <!-- Placeholder for alignment -->
+      <button @click="toggleChat" class="chat-button focus:outline-none focus:ring-2 focus:ring-blue-300 rounded-full p-2 transition duration-300 ease-in-out transform hover:scale-110">
+        <img src="@/assets/chat.png" alt="Chat" class="w-6 h-6 sm:w-8 sm:h-8"/>
+      </button>
     </header>
 
     <main class="container mx-auto px-4 pb-8 flex-grow pt-24 sm:pt-28 content-top-padding">
@@ -44,6 +46,9 @@
         :headerHeight="headerHeight"
         :contentHeight="contentHeight"
         />
+
+        <ChatWindow v-if="showChat" :isOpen="showChat" @close="handleCloseChat" />
+
     </main>
 
     <footer v-if="!selectedBook" class="fixed bottom-0 left-0 right-0 bg-white shadow-md py-4 px-6 footer-height">
@@ -61,13 +66,15 @@
 import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import { API_ENDPOINT } from '@/config';
-// import ReadingArea from './components/ReadingArea.vue';
 import ReadingAreaNew from './components/ReadingAreaNew.vue';
+import ChatWindow from './components/ChatWindow.vue';
+
 
 export default {
   name: 'App',
   components: {
-    ReadingAreaNew
+    ReadingAreaNew,
+    ChatWindow
   },
   setup() {
     const books = ref([]);
@@ -76,12 +83,21 @@ export default {
     const error = ref(null);
     const selectedBook = ref(null);
     const showBookSummary = ref(false);
-    const showChat = ref(false);
     const fileInput = ref(null);
     const isBookLoading = ref(false);
     const bookLoadingProgress = ref(0);
     const headerHeight = ref(64);
     const footerHeight = ref(56);
+    const showChat = ref(false);
+
+    const toggleChat = () => {
+      showChat.value = !showChat.value;
+    };
+
+    const handleCloseChat = () => {
+      showChat.value = false;
+    };
+
 
 
     const contentHeight = computed(() => {
@@ -172,14 +188,6 @@ export default {
 
     const toggleBookSummary = () => {
       showBookSummary.value = !showBookSummary.value;
-    };
-
-    const toggleChat = () => {
-      showChat.value = !showChat.value;
-    };
-
-    const handleCloseChat = () => {
-      showChat.value = false;
     };
 
     const handleCloseSummary = () => {
