@@ -5,9 +5,18 @@
         <img src="@/assets/home.png" alt="Home" class="w-6 h-6 sm:w-8 sm:h-8"/>
       </button>
       <h1 class="font-bold text-xl sm:text-3xl text-blue-600">AI-Assisted Reader</h1>
-      <button @click="toggleChat" class="chat-button focus:outline-none focus:ring-2 focus:ring-blue-300 rounded-full p-2 transition duration-300 ease-in-out transform hover:scale-110">
-        <img src="@/assets/chat.png" alt="Chat" class="w-6 h-6 sm:w-8 sm:h-8"/>
-      </button>
+      <div class="flex items-center">
+        <button 
+          v-if="selectedBook"
+          @click="toggleSummaryOverlay" 
+          class="summary-button focus:outline-none focus:ring-2 focus:ring-blue-300 rounded-full p-2 mr-2 transition duration-300 ease-in-out transform hover:scale-110"
+        >
+          <img src="@/assets/AI.png" alt="Summary" class="w-6 h-6 sm:w-8 sm:h-8"/>
+        </button>
+        <button @click="toggleChat" class="chat-button focus:outline-none focus:ring-2 focus:ring-blue-300 rounded-full p-2 transition duration-300 ease-in-out transform hover:scale-110">
+          <img src="@/assets/chat.png" alt="Chat" class="w-6 h-6 sm:w-8 sm:h-8"/>
+        </button>
+      </div>
     </header>
 
     <main class="container mx-auto px-4 pb-8 flex-grow pt-24 sm:pt-28 content-top-padding">
@@ -41,11 +50,12 @@
       </template>
 
       <ReadingAreaNew
-        v-if="selectedBook"
-        :book="selectedBook"
-        :headerHeight="headerHeight"
-        :contentHeight="contentHeight"
-        />
+      v-if="selectedBook"
+      :book="selectedBook"
+      :headerHeight="headerHeight"
+      :contentHeight="contentHeight"
+      ref="readingAreaRef"
+      />
 
       <ChatWindow 
         v-if="showChat" 
@@ -93,6 +103,8 @@ export default {
     const headerHeight = ref(64);
     const footerHeight = ref(56);
     const showChat = ref(false);
+    const readingAreaRef = ref(null);
+
 
     const toggleChat = () => {
       showChat.value = !showChat.value;
@@ -102,7 +114,11 @@ export default {
       showChat.value = false;
     };
 
-
+    const toggleSummaryOverlay = () => {
+      if (selectedBook.value && selectedBook.value.readingAreaRef) {
+        selectedBook.value.readingAreaRef.toggleSummaryOverlay();
+      }
+    };
 
     const contentHeight = computed(() => {
       return `calc(100vh - ${headerHeight.value}px - ${footerHeight.value}px)`;
@@ -136,7 +152,8 @@ export default {
         });
         selectedBook.value = {
           ...book,
-          epub: response.data
+          epub: response.data,
+          readingAreaRef: readingAreaRef
         };
         console.log("Finished loading");
       } catch (error) {
@@ -227,7 +244,9 @@ export default {
       handleResize,
       headerHeight,
       footerHeight,
-      contentHeight
+      contentHeight,
+      toggleSummaryOverlay,
+      readingAreaRef
     };
   }
 }
