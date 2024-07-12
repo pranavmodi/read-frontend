@@ -5,17 +5,24 @@
         <img src="@/assets/home.png" alt="Home" class="w-6 h-6 sm:w-8 sm:h-8"/>
       </button>
       <h1 class="font-bold text-xl sm:text-3xl text-blue-600">AI-Assisted Reader</h1>
-      <div class="flex items-center">
-        <button 
-          v-if="selectedBook"
-          @click="toggleSummaryOverlay" 
-          class="summary-button focus:outline-none focus:ring-2 focus:ring-blue-300 rounded-full p-2 mr-2 transition duration-300 ease-in-out transform hover:scale-110"
-        >
-          <img src="@/assets/AI.png" alt="Summary" class="w-6 h-6 sm:w-8 sm:h-8"/>
-        </button>
-        <button @click="toggleChat" class="chat-button focus:outline-none focus:ring-2 focus:ring-blue-300 rounded-full p-2 transition duration-300 ease-in-out transform hover:scale-110">
-          <img src="@/assets/chat.png" alt="Chat" class="w-6 h-6 sm:w-8 sm:h-8"/>
-        </button>
+      <div class="flex items-center relative">
+        <div v-if="selectedBook" class="relative">
+          <button 
+            @click="toggleDropdown"
+            class="ai-tools-button focus:outline-none focus:ring-2 focus:ring-blue-300 rounded-full p-2 transition duration-300 ease-in-out transform hover:scale-110"
+          >
+            <img src="@/assets/ai-tools.png" alt="AI Tools" class="w-6 h-6 sm:w-8 sm:h-8"/>
+          </button>
+          <div 
+            v-if="showDropdown"
+            class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20"
+          >
+            <a @click="chatWithBook" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer">Chat with Book</a>
+            <a @click="explainPage" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer">Explain the page</a>
+            <a @click="showBookSummaries" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer">Book Summaries</a>
+          </div>
+        </div>
+
       </div>
     </header>
 
@@ -84,6 +91,7 @@ import ReadingAreaNew from './components/ReadingAreaNew.vue';
 import ChatWindow from './components/ChatWindow.vue';
 
 
+
 export default {
   name: 'App',
   components: {
@@ -104,6 +112,37 @@ export default {
     const footerHeight = ref(56);
     const showChat = ref(false);
     const readingAreaRef = ref(null);
+    const showDropdown = ref(false);
+
+    const toggleDropdown = () => {
+      showDropdown.value = !showDropdown.value;
+    };
+
+    const chatWithBook = () => {
+      showDropdown.value = false;
+      // Implement chat functionality
+      toggleChat();
+      // if (readingAreaRef.value) {
+      //   readingAreaRef.value.toggleChat();
+      // }
+    };
+
+    const explainPage = () => {
+      showDropdown.value = false;
+      console.log('going to try explain page');
+      // Implement page explanation functionality
+      if (readingAreaRef.value) {
+        readingAreaRef.value.explainPage();
+      }
+    };
+
+    const showBookSummaries = () => {
+      showDropdown.value = false;
+      // Implement book summaries functionality
+      if (readingAreaRef.value) {
+        readingAreaRef.value.toggleSummaryOverlay();
+      }
+    };
 
 
     const toggleChat = () => {
@@ -246,7 +285,12 @@ export default {
       footerHeight,
       contentHeight,
       toggleSummaryOverlay,
-      readingAreaRef
+      readingAreaRef,
+      showDropdown,
+      explainPage,
+      showBookSummaries,
+      toggleDropdown,
+      chatWithBook
     };
   }
 }
@@ -301,5 +345,33 @@ export default {
   .content-top-padding {
     padding-top: 56px; /* Should match the mobile header height */
   }
+}
+
+
+.ai-tools-button {
+  position: relative;
+}
+
+.dropdown-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background-color: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  box-shadow: 0 2px 4px 0 rgba(0,0,0,0.1);
+  z-index: 20;
+}
+
+.dropdown-item {
+  display: block;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  color: #4a5568;
+  transition: background-color 0.2s;
+}
+
+.dropdown-item:hover {
+  background-color: #f7fafc;
 }
 </style>

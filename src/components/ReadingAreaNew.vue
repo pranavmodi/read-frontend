@@ -74,6 +74,19 @@
       </div>
     </div>
 
+    <!-- Explanation Overlay -->
+    <div v-if="showExplanationOverlay" class="absolute inset-0 bg-white z-10 flex flex-col overflow-hidden">
+      <header class="bg-gray-100 shadow-md p-4 flex items-center justify-between">
+        <h2 class="text-xl font-bold">Page Explanation</h2>
+        <button @click="closeExplanationOverlay" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded text-sm sm:text-base transition-colors duration-200">
+          Close
+        </button>
+      </header>
+      <div class="flex-grow overflow-y-auto p-4">
+        <p class="text-sm sm:text-base">{{ explanationContent }}</p>
+      </div>
+    </div>
+
     <!-- Toggle button for summary overlay -->
     <button @click="toggleSummaryOverlay" class="fixed bottom-20 right-2 bg-blue-500 text-white p-1 rounded-full shadow-lg z-20">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -107,7 +120,7 @@ import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import { API_ENDPOINT } from '@/config';
 import io from 'socket.io-client';
 // import { clearAllCache, getCachedAllChapterSummaries, getCachedBookSummary, cacheBookSummary, cacheChapterSummary, getCachedChapterSummary } from '@/utils/cacheUtils.js';
-import { clearAllCache, getCachedBookSummary, cacheBookSummary, cacheChapterSummary, getCachedChapterSummary } from '@/utils/cacheUtils.js';
+import { getCachedBookSummary, cacheBookSummary, cacheChapterSummary, getCachedChapterSummary } from '@/utils/cacheUtils.js';
 
 export default {
   name: 'ReadingAreaNew',
@@ -153,6 +166,77 @@ export default {
     const touchStartTime = ref(0);
     const footerHeight = ref(50); // Adjust this value based on your footer's actual height
     const windowHeight = ref(window.innerHeight);
+    const showExplanationOverlay = ref(false);
+    const explanationContent = ref('');
+
+    const closeExplanationOverlay = () => {
+      showExplanationOverlay.value = false;
+    };
+
+    const explainPage = async () => {
+      if (!rendition.value) {
+        console.error("Rendition not available");
+        return;
+      }
+
+      try {
+        const currentLocation = rendition.value.currentLocation();
+        if (!currentLocation) {
+          console.error("Current location not available");
+          return;
+      }
+
+      // Get all content elements
+      const contents = await rendition.value.getContents();
+      
+      // Extract text content from all elements
+      let currentPageText = '';
+      contents.forEach(content => {
+        if (content.content) {
+          currentPageText += content.content.textContent + ' ';
+        }
+      });
+
+      currentPageText = currentPageText.trim();
+
+      if (!currentPageText) {
+        console.error("No text content found on the current page");
+        return;
+      }
+
+      // Get current chapter information
+      const currentChapter = book.value.spine.get(currentLocation.start.cfi);
+      const chapterName = currentChapter ? currentChapter.href : 'Unknown Chapter';
+
+      console.log('in explain page', props.book.name);
+      console.log('in explain page', currentPageText.substring(0, 100) + '...'); // Log first 100 characters
+
+      const response = await fetch(`${API_ENDPOINT}/explain-page`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          book_name: props.book.name,
+          chapter_name: chapterName,
+          page_text: currentPageText,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get page explanation');
+      }
+
+      const data = await response.json();
+      explanationContent.value = data.explanation.explanation;
+      showExplanationOverlay.value = true;
+    } catch (error) {
+      console.error('Error explaining page:', error);
+      explanationContent.value = "Failed to explain the page. Please try again.";
+      showExplanationOverlay.value = true;
+    }
+  };
+
     // const db_bookTitle = ref(null);
 
     const epubViewerHeight = computed(() => {
@@ -401,8 +485,8 @@ export default {
     };
 
     const getAllSummaries = async () => {
-      if (!book.value) {
-        console.error("Book not loaded");
+      if (!book.value || !book.value.spine) {
+        console.error("Book not loaded or spine not available");
         return;
       }
       console.log('in all summaries');
@@ -783,7 +867,7 @@ export default {
     };
 
     onMounted(() => {
-      clearAllCache();
+      // clearAllCache();
       // console.log('cleared all local cache');
       initializeEpubViewer();
       // window.addEventListener('resize', adjustViewerHeight);
@@ -862,6 +946,10 @@ export default {
       mobileEpubViewerHeight,
       footerHeight,
       epubViewerHeight,
+      showExplanationOverlay,
+      explanationContent,
+      explainPage,
+      closeExplanationOverlay,
       // headerHeight: props.headerHeight
     };
   }
