@@ -699,11 +699,32 @@ export default {
           await applyAdaptiveDifficulty();
         }
 
+        const bookName = props.book.name || "Unknown Book";
+
         loading.value = false;
-        console.log('Book loaded successfully');
+        console.log('Book loaded successfully, now going to initialize book');
+
+        try {
+
+          const response = await fetch(`${API_ENDPOINT}/initialize_book`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            filename: props.book.filename,
+            book_name: props.book.name
+          }),
+        });
+          console.log('Vectorization initialization response:', response.data);
+        } catch (vectorizationError) {
+          console.error('Error initializing book vectorization:', vectorizationError);
+          // Optionally set an error message or handle the error as needed
+          // error.value = 'Failed to initialize book vectorization. Some features may be limited.';
+        }
 
         // Check if summaries exist in cache
-        const bookName = props.book.name || "Unknown Book";
+        // const bookName = props.book.name || "Unknown Book";
         const cachedBookSummary = getCachedBookSummary(bookName);
         
         if (cachedBookSummary) {
