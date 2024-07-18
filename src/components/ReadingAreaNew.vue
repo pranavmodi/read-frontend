@@ -173,71 +173,179 @@ export default {
       showExplanationOverlay.value = false;
     };
 
-    const explainPage = async () => {
-      if (!rendition.value) {
-        console.error("Rendition not available");
-        return;
-      }
+  //   const explainPage = async () => {
+  //     if (!rendition.value) {
+  //       console.error("Rendition not available");
+  //       return;
+  //     }
 
-      try {
-        const currentLocation = rendition.value.currentLocation();
-        if (!currentLocation) {
-          console.error("Current location not available");
-          return;
-      }
+  //     try {
+  //       const currentLocation = rendition.value.currentLocation();
+  //       if (!currentLocation) {
+  //         console.error("Current location not available");
+  //         return;
+  //     }
 
-      // Get all content elements
-      const contents = await rendition.value.getContents();
+  //     // Get all content elements
+  //     const contents = await rendition.value.getContents();
       
-      // Extract text content from all elements
-      let currentPageText = '';
-      contents.forEach(content => {
-        if (content.content) {
-          currentPageText += content.content.textContent + ' ';
-        }
-      });
+  //     // Extract text content from all elements
+  //     let currentPageText = '';
+  //     contents.forEach(content => {
+  //       if (content.content) {
+  //         currentPageText += content.content.textContent + ' ';
+  //       }
+  //     });
 
-      currentPageText = currentPageText.trim();
+  //     currentPageText = currentPageText.trim();
 
-      if (!currentPageText) {
-        console.error("No text content found on the current page");
-        return;
-      }
+  //     if (!currentPageText) {
+  //       console.error("No text content found on the current page");
+  //       return;
+  //     }
 
-      // Get current chapter information
-      const currentChapter = book.value.spine.get(currentLocation.start.cfi);
-      const chapterName = currentChapter ? currentChapter.href : 'Unknown Chapter';
+  //     // Get current chapter information
+  //     const currentChapter = book.value.spine.get(currentLocation.start.cfi);
+  //     const chapterName = currentChapter ? currentChapter.href : 'Unknown Chapter';
 
-      console.log('in explain page', props.book.name);
-      console.log('in explain page', currentPageText.substring(0, 100) + '...'); // Log first 100 characters
+  //     console.log('in explain page', props.book.name);
+  //     console.log('in explain page', currentPageText.substring(0, 100) + '...'); // Log first 100 characters
 
-      const response = await fetch(`${API_ENDPOINT}/explain-page`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          book_name: props.book.name,
-          chapter_name: chapterName,
-          page_text: currentPageText,
-        }),
-      });
+  //     const response = await fetch(`${API_ENDPOINT}/explain-page`, {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify({
+  //         book_name: props.book.name,
+  //         chapter_name: chapterName,
+  //         page_text: currentPageText,
+  //       }),
+  //     });
 
-      if (!response.ok) {
-        throw new Error('Failed to get page explanation');
-      }
+  //     if (!response.ok) {
+  //       throw new Error('Failed to get page explanation');
+  //     }
 
-      const data = await response.json();
-      explanationContent.value = data.explanation.explanation;
-      showExplanationOverlay.value = true;
-    } catch (error) {
-      console.error('Error explaining page:', error);
-      explanationContent.value = "Failed to explain the page. Please try again.";
-      showExplanationOverlay.value = true;
-    }
-  };
+  //     const data = await response.json();
+  //     explanationContent.value = data.explanation.explanation;
+  //     showExplanationOverlay.value = true;
+  //   } catch (error) {
+  //     console.error('Error explaining page:', error);
+  //     explanationContent.value = "Failed to explain the page. Please try again.";
+  //     showExplanationOverlay.value = true;
+  //   }
+  // };
 
     // const db_bookTitle = ref(null);
+
+    const explainPage = async () => {
+  if (!rendition.value) {
+    console.error("Rendition not available");
+    return;
+  }
+
+  try {
+    const currentLocation = rendition.value.currentLocation();
+    if (!currentLocation) {
+      console.error("Current location not available");
+      return;
+    }
+
+    console.log("Current location:", currentLocation);
+
+    // Function to generate a CFI range from two CFI locations
+    const makeRangeCfi = (a, b) => {
+      const CFI = new window.ePub.CFI()
+      const start = CFI.parse(a), end = CFI.parse(b)
+      const cfi = {
+        range: true,
+        base: start.base,
+        path: {
+          steps: [],
+          terminal: null
+        },
+        start: start.path,
+        end: end.path
+      }
+      const len = cfi.start.steps.length
+      for (let i = 0; i < len; i++) {
+        if (CFI.equalStep(cfi.start.steps[i], cfi.end.steps[i])) {
+          if (i == len - 1) {
+            // Last step is equal, check terminals
+            if (cfi.start.terminal === cfi.end.terminal) {
+              // CFI's are equal
+              cfi.path.steps.push(cfi.start.steps[i])
+              // Not a range
+              cfi.range = false
+            }
+          } else cfi.path.steps.push(cfi.start.steps[i])
+        } else break
+      }
+      cfi.start.steps = cfi.start.steps.slice(cfi.path.steps.length)
+      cfi.end.steps = cfi.end.steps.slice(cfi.path.steps.length)
+
+      return 'epubcfi(' + CFI.segmentString(cfi.base)
+        + '!' + CFI.segmentString(cfi.path)
+        + ',' + CFI.segmentString(cfi.start)
+        + ',' + CFI.segmentString(cfi.end)
+        + ')'
+    }
+
+    // Get the start and end CFIs for the current location
+    const [startCfi, endCfi] = [currentLocation.start.cfi, currentLocation.end.cfi];
+    
+    console.log("Start CFI:", startCfi);
+    console.log("End CFI:", endCfi);
+
+    // Generate the range CFI
+    const rangeCfi = makeRangeCfi(startCfi, endCfi);
+    console.log("Range CFI:", rangeCfi);
+
+    // Get the range object and extract the text
+    const range = await book.value.getRange(rangeCfi);
+    let visibleText = range.toString();
+
+    console.log("Visible text length:", visibleText.length);
+    console.log("First 100 characters of visible text:", visibleText);
+
+    if (!visibleText) {
+      console.error("No visible text found on the current page");
+      return;
+    }
+
+    // Get current chapter information
+    const currentChapter = book.value.spine.get(currentLocation.start.cfi);
+    const chapterName = currentChapter ? currentChapter.href : 'Unknown Chapter';
+
+    console.log("Current chapter:", chapterName);
+
+    const response = await fetch(`${API_ENDPOINT}/explain-page`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        book_name: props.book.name,
+        chapter_name: chapterName,
+        page_text: visibleText,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to get page explanation');
+    }
+
+    const data = await response.json();
+    explanationContent.value = data.explanation.explanation;
+    showExplanationOverlay.value = true;
+
+  } catch (error) {
+    console.error('Error explaining page:', error);
+    explanationContent.value = "Failed to explain the page. Please try again.";
+    showExplanationOverlay.value = true;
+  }
+};
 
     const epubViewerHeight = computed(() => {
       return `${windowHeight.value - props.headerHeight - footerHeight.value}px`;
