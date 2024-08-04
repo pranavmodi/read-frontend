@@ -528,7 +528,8 @@ export default {
           },
           body: JSON.stringify({
             filename: props.book.filename,
-            name: props.book.name
+            name: props.book.name,
+            book_id: props.book.book_id
           }),
         });
         
@@ -831,7 +832,8 @@ export default {
           },
           body: JSON.stringify({
             filename: props.book.filename,
-            book_name: props.book.name
+            book_name: props.book.name,
+            book_id: props.book.book_id
           }),
         });
           console.log('Vectorization initialization response:', response.data);

@@ -190,7 +190,7 @@ export default {
       bookLoadingProgress.value = 0;
 
       try {
-        console.log("Starting to load...");
+        console.log("Starting to load...", book);
         const response = await axios.get(`${API_ENDPOINT}${book.epub}`, {
           responseType: 'arraybuffer',
           onDownloadProgress: (progressEvent) => {
