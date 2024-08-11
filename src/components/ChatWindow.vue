@@ -25,7 +25,7 @@
         </button>
       </div>
     </div>
-  </template>
+</template>
   
   <script>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
@@ -37,6 +37,8 @@ export default {
   props: {
     isOpen: Boolean,
     bookName: String, 
+    fileName: String,
+    bookId: String
   },
   emits: ['close'],
   setup(props, { emit }) {
@@ -85,7 +87,9 @@ export default {
         try {
           const response = await axios.post(`${API_ENDPOINT}/chat_with_book`, {
             query: userMessage,
-            book_name: props.bookName
+            book_name: props.bookName,
+            file_name: props.fileName,
+            book_id: props.bookId
           });
 
           messages.value.push({ sender: 'app', text: response.data.response });

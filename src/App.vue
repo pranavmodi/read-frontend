@@ -77,6 +77,8 @@
         v-if="showChat" 
         :isOpen="showChat" 
         :bookName="selectedBook ? selectedBook.name : ''"
+        :fileName="selectedBook ? selectedBook.filename : ''"
+        :bookId="selectedBook ? selectedBook.book_id : ''"
         @close="handleCloseChat" 
       />
     </main>
@@ -177,6 +179,7 @@ export default {
         console.log('the endpoint is ', API_ENDPOINT);
         const response = await axios.get(`${API_ENDPOINT}/get-books`);
         books.value = response.data;
+        console.log(books.value)
       } catch (err) {
         error.value = 'Failed to fetch books from the backend';
         console.error(err);
