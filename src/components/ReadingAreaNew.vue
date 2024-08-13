@@ -13,66 +13,85 @@
     <!-- EPUB viewer -->
     <div ref="epubViewerRef" id="epub-viewer" :style="{ height: epubViewerHeight }"></div>
 
-    <!-- Summary Overlay -->
-    <div v-if="showSummaryOverlay" class="absolute inset-0 bg-white z-10 flex flex-col overflow-hidden">
-      <!-- Fixed Header -->
-      <header class="bg-gray-100 shadow-md p-4 flex items-center justify-between">
-        <!-- Segmented Control -->
-        <div class="inline-flex rounded-md shadow-sm" role="group">
-          <button 
-            @click="summaryType = 'book'" 
-            :class="[
-              'px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border transition-colors duration-200',
-              summaryType === 'book' 
-                ? 'bg-blue-500 text-white border-blue-600' 
-                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-            ]"
-          >
-            Book Summary
-          </button>
-          <button 
-            @click="summaryType = 'chapters'" 
-            :class="[
-              'px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border transition-colors duration-200',
-              summaryType === 'chapters' 
-                ? 'bg-blue-500 text-white border-blue-600' 
-                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-            ]"
-          >
-            Chapters
-          </button>
-        </div>
-        
-        <!-- Close Button -->
-        <button @click="toggleSummaryOverlay" :disabled="isProcessing" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded text-sm sm:text-base disabled:opacity-50 transition-colors duration-200">
-          Close Summary
+  <!-- Summary Overlay -->
+  <div v-if="showSummaryOverlay" class="absolute inset-0 bg-white z-10 flex flex-col overflow-hidden">
+    <!-- Fixed Header -->
+    <header class="bg-gray-100 shadow-md p-4 flex items-center justify-between">
+      <!-- Segmented Control -->
+      <div class="inline-flex rounded-md shadow-sm" role="group">
+        <button 
+          @click="summaryType = 'book'" 
+          :class="[
+            'px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border transition-colors duration-200',
+            summaryType === 'book' 
+              ? 'bg-blue-500 text-white border-blue-600' 
+              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+          ]"
+        >
+          Book Summary
         </button>
-      </header>
+        <button 
+          @click="summaryType = 'chapters'" 
+          :class="[
+            'px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border transition-colors duration-200',
+            summaryType === 'chapters' 
+              ? 'bg-blue-500 text-white border-blue-600' 
+              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+          ]"
+        >
+          Chapters
+        </button>
+      </div>
+      
+      <!-- Close Button -->
+      <button @click="toggleSummaryOverlay" :disabled="isProcessing" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded text-sm sm:text-base disabled:opacity-50 transition-colors duration-200">
+        Close Summary
+      </button>
+    </header>
 
-      <!-- Content Area -->
-      <div class="flex-grow overflow-y-auto p-4">
-        <div v-if="isProcessing" class="flex flex-col items-center justify-center h-full">
-          <div class="w-64 bg-gray-200 rounded-full h-6 dark:bg-gray-700 mb-4">
-            <div class="bg-blue-600 h-6 rounded-full" :style="{ width: `${progress}%` }"></div>
-          </div>
-          <p class="text-sm sm:text-base">Processing: {{ progress }}%</p>
+    <!-- Content Area -->
+    <div class="flex-grow overflow-y-auto p-4">
+      <div v-if="isProcessing" class="flex flex-col items-center justify-center h-full">
+        <div class="w-64 bg-gray-200 rounded-full h-6 dark:bg-gray-700 mb-4">
+          <div class="bg-blue-600 h-6 rounded-full" :style="{ width: `${progress}%` }"></div>
         </div>
-        <div v-else>
-          <h2 class="text-xl sm:text-2xl font-bold mb-4 text-center">
-            {{ summaryType === 'book' ? 'Book Summary' : 'Chapter Summaries' }}
-          </h2>
-          <div v-if="summaryType === 'book'" class="text-sm sm:text-base">
-            <p>{{ bookSummary }}</p>
+        <p class="text-sm sm:text-base">Processing: {{ progress }}%</p>
+      </div>
+      <div v-else>
+        <div v-if="summaryType === 'book'" class="text-sm sm:text-base">
+          <h2 class="text-xl sm:text-2xl font-bold mb-4 text-center">Book Summary</h2>
+          <p>{{ bookSummary }}</p>
+        </div>
+        <div v-else-if="summaryType === 'chapters' && !selectedChapter">
+          <h2 class="text-xl sm:text-2xl font-bold mb-4 text-center">Chapter Summaries</h2>
+          <ul class="space-y-4">
+            <li v-for="chapter in chapterSummaries" :key="chapter.id" 
+                @click="handleChapterClick(chapter)"
+                class="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer">
+              <h3 class="font-bold mb-2 text-lg">{{ chapter.title }}</h3>
+              <p class="mb-2">{{ chapter.summary }}</p>
+            </li>
+          </ul>
+        </div>
+        <div v-else-if="selectedChapter">
+          <button @click="handleBackClick" class="mb-4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded inline-flex items-center">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            Back to Chapters
+          </button>
+          <h2 class="text-xl sm:text-2xl font-bold mb-4">{{ selectedChapter.title }}</h2>
+          <div v-if="selectedChapter.isLoading">
+            <p>Loading detailed summary...</p>
           </div>
           <div v-else>
-            <div v-for="(chapter, index) in Object.values(chapterSummaries)" :key="index" class="mb-4">
-              <h3 class="text-lg sm:text-xl font-semibold">{{ chapter.title }}</h3>
-              <p class="text-sm sm:text-base">{{ chapter.content }}</p>
-            </div>
+            <p>{{ selectedChapter.detailedSummary }}</p>
           </div>
         </div>
       </div>
     </div>
+  </div>
+
 
     <!-- Explanation Overlay -->
     <div v-if="showExplanationOverlay" class="absolute inset-0 bg-white z-10 flex flex-col overflow-hidden">
@@ -120,7 +139,11 @@ import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import { API_ENDPOINT } from '@/config';
 import io from 'socket.io-client';
 // import { clearAllCache, getCachedAllChapterSummaries, getCachedBookSummary, cacheBookSummary, cacheChapterSummary, getCachedChapterSummary } from '@/utils/cacheUtils.js';
-import { getCachedBookSummary, cacheBookSummary, cacheChapterSummary, getCachedChapterSummary } from '@/utils/cacheUtils.js';
+import { getCachedBookSummary, cacheBookSummary, getCachedChapterSummary } from '@/utils/cacheUtils.js';
+// import { getCachedBookSummary, cacheBookSummary, cacheChapterSummary, getCachedChapterSummary } from '@/utils/cacheUtils.js';
+
+// import ChapterSummaries from './components/ChapterSummaries.vue';
+
 
 export default {
   name: 'ReadingAreaNew',
@@ -168,6 +191,55 @@ export default {
     const windowHeight = ref(window.innerHeight);
     const showExplanationOverlay = ref(false);
     const explanationContent = ref('');
+    const summaryView = ref('chapters');
+    const selectedChapter = ref(null);
+    const detailedSummary = ref('');
+
+    const fetchDetailedChapterSummary = async (chapterId) => {
+      try {
+        console.log(`Fetching detailed summary for chapter ${chapterId} from server`);
+        return chapterId;
+        // const response = await fetch(`${API_ENDPOINT}/detailed-chapter-summary/${encodeURIComponent(chapterId)}`, {
+        //   method: 'GET',
+        //   headers: {
+        //     'Content-Type': 'application/json',
+        //   },
+        // });
+
+        // if (!response.ok) {
+        //   throw new Error(`HTTP error! status: ${response.status}`);
+        // }
+
+        // const data = await response.json();
+
+        // if (data.status === 'success' && data.chapter_summary) {
+        //   return data.chapter_summary.detailed_summary;
+        // } else {
+        //   throw new Error('Invalid response format or missing chapter summary');
+        // }
+      } catch (error) {
+        console.error(`Error fetching detailed summary for chapter ${chapterId}:`, error);
+        return "We're sorry, but we couldn't load the detailed chapter summary at this time. Please try again later.";
+      }
+    };
+
+
+    // Update the handleChapterClick function to use fetchDetailedChapterSummary
+    const handleChapterClick = async (chapter) => {
+      selectedChapter.value = chapter;
+      if (!chapter.detailedSummary) {
+        chapter.isLoading = true;
+        const chapterId = generateChapterIdentifier(chapter.href);
+        chapter.detailedSummary = await fetchDetailedChapterSummary(chapterId);
+        chapter.isLoading = false;
+      }
+    };
+
+    const handleBackClick = () => {
+      // summaryView.value = 'chapters';
+      selectedChapter.value = null;
+    };
+
 
     const closeExplanationOverlay = () => {
       showExplanationOverlay.value = false;
@@ -543,76 +615,44 @@ export default {
         console.error("Book not loaded or spine not available");
         return;
       }
-      console.log('in all summaries');
+
       const chapters = book.value.spine.spineItems;
-      const bookName = props.book.name || "Unknown Book";
-
-      const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-      // Initialize chapterSummaries.value with pending placeholders
-      chapterSummaries.value = chapters.map((_, index) => ({
+      
+      chapterSummaries.value = chapters.map((chapter, index) => ({
+        id: index + 1,
         title: `Chapter ${index + 1}`,
-        content: "Fetching summary...",
-        isFetching: true
+        summary: "Fetching summary...",
+        href: chapter.href,
+        isLoading: false,
+        isExpanded: false,
+        detailedSummary: null
       }));
 
-      const fetchChapterSummary = async (chapterId, index) => {
-        const cachedSummary = getCachedChapterSummary(bookName, chapterId);
-        if (cachedSummary) {
-          // console.log(`Retrieved summary for chapter ${chapterId} from cache`);
-          updateChapterSummary(index, cachedSummary);
-          return;
-        }
-
-        // console.log(`Fetching summary for chapter ${chapterId} from server`);
+      for (let chapter of chapterSummaries.value) {
         try {
+          const chapterId = generateChapterIdentifier(chapter.href);
           const response = await fetch(`${API_ENDPOINT}/chapter-summary/${encodeURIComponent(chapterId)}`, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
             },
           });
-
+          
           if (!response.ok) {
             throw new Error('Network response was not ok');
           }
 
           const data = await response.json();
-
-          if (data.status === 'success') {
-            const summary = data.chapter_summary.summary;
-            cacheChapterSummary(bookName, chapterId, summary);
-            updateChapterSummary(index, summary);
-          } else if (data.status === 'pending') {
-            updateChapterSummary(index, "Summary is pending for this chapter.");
+          if (data.status === 'success' && data.chapter_summary) {
+            chapter.summary = data.chapter_summary.summary;
           } else {
-            throw new Error('Failed to fetch summary');
+            throw new Error('Invalid response format or missing chapter summary');
           }
         } catch (error) {
-          console.error(`Error fetching summary for chapter ${chapterId}:`, error);
-          updateChapterSummary(index, "An error occurred while fetching the chapter summary.");
-        }
-      };
-
-      const updateChapterSummary = (index, content) => {
-        chapterSummaries.value[index] = {
-          ...chapterSummaries.value[index],
-          content: content,
-          isFetching: false
-        };
-      };
-
-      for (let i = 0; i < chapters.length; i++) {
-        const chapter = chapters[i];
-        const chapterId = generateChapterIdentifier(chapter.href);
-        fetchChapterSummary(chapterId, i);
-
-        if (i < chapters.length - 1) {
-          await delay(500); // 0.5 second delay between requests
+          console.error(`Error fetching summary for chapter ${chapter.id}:`, error);
+          chapter.summary = "Failed to load chapter summary.";
         }
       }
-
-      console.log('All chapter summary fetches initiated');
     };
 
     // const getChapterSummaries = async () => {
@@ -1026,6 +1066,11 @@ export default {
       explanationContent,
       explainPage,
       closeExplanationOverlay,
+      summaryView,
+      selectedChapter,
+      detailedSummary,
+      handleChapterClick,
+      handleBackClick
       // headerHeight: props.headerHeight
     };
   }
