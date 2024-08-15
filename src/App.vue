@@ -6,24 +6,8 @@
       </button>
 
       <h1 v-if="!selectedBook" class="font-bold text-xl sm:text-3xl text-blue-600">AI-Assisted Reader</h1>
-        <div class="flex items-center relative">
-          <!-- <div v-if="selectedBook" class="relative">
-            <button 
-              @click="toggleDropdown"
-              class="ai-tools-button focus:outline-none focus:ring-2 focus:ring-blue-300 rounded-full p-2 transition duration-300 ease-in-out transform hover:scale-110"
-            >
-              <img src="@/assets/ai-tools.png" alt="AI Tools" class="w-6 h-6 sm:w-8 sm:h-8"/>
-            </button>
-            <div 
-              v-if="showDropdown"
-              class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20"
-            >
-              <a @click="chatWithBook" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer">Chat with Book</a>
-              <a @click="explainPage" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer">Explain the page</a>
-              <a @click="showBookSummaries" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer">Book Summaries</a>
-            </div>
-        </div> -->
-              <!-- New buttons when a book is selected -->
+      <div class="flex items-center relative">
+        <!-- New buttons when a book is selected -->
         <div v-if="selectedBook" class="flex items-center space-x-4">
           <button @click="explainPage" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out">
             De-Jargonify
@@ -31,6 +15,16 @@
           <button @click="chatWithBook" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out">
             Chat with Book
           </button>
+          <!-- New Summaries dropdown -->
+          <div class="relative">
+            <button @click="toggleSummariesDropdown" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out">
+              Summaries
+            </button>
+            <div v-if="showSummariesDropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20">
+              <a @click="showAllSummaries" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer">All Summaries</a>
+              <a @click="showChapterSummary" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer">Chapter Summary</a>
+            </div>
+          </div>
         </div>
       </div>
     </header>
